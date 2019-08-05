@@ -1,0 +1,13 @@
+name = "ForwardDiff2"
+uuid = "994df76e-a4c1-5e1f-bd5c-23b9b5303d4f"
+authors = ["Yingbo Ma <mayingbo5@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+ChainRules = "082447d4-558c-5d27-93f4-14fc19e9eca2"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
