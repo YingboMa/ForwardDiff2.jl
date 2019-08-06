@@ -17,4 +17,6 @@ using ForwardDiff: value, partials
     @test sin.(x) == dx
     @test sin.(_x) == value.(dx)
     @test cos.(_x) == partials.(dx, 1)
+
+    @test all(iszero, partials(similar(x), 1))
 end

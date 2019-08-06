@@ -37,11 +37,12 @@ Base.Broadcast.BroadcastStyle(::Type{<:DualArray{T,E,M,D,I}}) where {T,E,M,D,I} 
 function Base.similar(bc::Broadcasted{<:DualStyle{M,T,I,D}}, ::Type{E}) where {M,T,I,D,E}
     if E <: Dual
         V = valtype(E)
-        DualArray{T,I}(similar(Array{V}, (axes(bc)..., Base.OneTo(I+1)))) # TODO: work with arbitrary array types. Maybe use `ArrayInterface.jl`?
+        arr = DualArray{T,I}(similar(Array{V}, (axes(bc)..., Base.OneTo(I+1)))) # TODO: work with arbitrary array types. Maybe use `ArrayInterface.jl`?
     else
         bc′ = convert(Broadcasted{D}, bc)
-        Base.similar(bc′, E)
+        arr = Base.similar(bc′, E)
     end
+    return arr
 end
 Base.BroadcastStyle(::DualStyle{M,T,I,D}, ::DualStyle{M,T,I,V}) where {M,T,I,D,V} = DualStyle{M,T,I,typeof(Base.BroadcastStyle(D(), V()))}()
 Base.BroadcastStyle(::DualStyle{M,T,I,D}, B::BroadcastStyle) where {M,T,I,D} = DualStyle{M,T,I,typeof(Base.BroadcastStyle(D(), B))}()
@@ -49,12 +50,12 @@ Base.BroadcastStyle(::DualStyle{M,T,I,D}, B::DefaultArrayStyle) where {M,T,I,D} 
 
 function ForwardDiff.value(d::DualArray)
     n = ndims(d)
-    @view d[ntuple(_ -> Colon(), Val(n))..., 1]
+    return @view d[ntuple(_ -> Colon(), Val(n))..., 1]
 end
 
 function ForwardDiff.partials(d::DualArray)
     n = ndims(d)
-    @view d[ntuple(_ -> Colon(), Val(n))..., 2:end]
+    return @view d[ntuple(_ -> Colon(), Val(n))..., 2:end]
 end
 
 Base.eachindex(d::DualArray) = eachindex(@view data(d)[:, 1])
@@ -66,9 +67,17 @@ Base.@propagate_inbounds function Base.getindex(d::DualArray, i...)
     return Dual(val, parts)
 end
 
+# TODO: linear indexing
 Base.@propagate_inbounds function Base.setindex!(d::DualArray, dual::Dual, i...)
     dd = data(d)
     dd[i..., 1] = value(dual)
     dd[i..., 2:end] .= partials(dual)
     return dual
+end
+
+Base.@propagate_inbounds function Base.setindex!(d::DualArray, x::Number, i...)
+    dd = data(d)
+    dd[i..., 1] = x
+    dd[i..., 2:end] .= zero(eltype(dd))
+    return x
 end
