@@ -1,21 +1,20 @@
 using Test
-using ForwardDiff2: DualArray, tagname, ncols
+using ForwardDiff2: DualArray, tagtype, npartials, value, partials
 using ForwardDiff: value, partials
 
 @testset "DualArray" begin
     a = rand(2)
     d1 = DualArray(a)
-    @test tagname(d1) === Nothing
+    @test tagtype(d1) === Nothing
     d2 = DualArray{2,2}(a)
-    @test tagname(d2) === 2
-    @test ncols(d2) === 2
+    @test tagtype(d2) === 2
 
     _x = rand(3)
     x = DualArray(hcat(_x, ones(3)))
+    @test npartials(x) === 1
     dx = similar(x)
-    for i in eachindex(x)
-        dx[i] = sin(x[i])
-    end
-    @test sin.(_x) == dx.data[:, 1]
-    @test cos.(_x) == dx.data[:, 2]
+    dx .= sin.(x)
+    @test sin.(x) == dx
+    @test sin.(_x) == value.(dx)
+    @test cos.(_x) == partials.(dx, 1)
 end
