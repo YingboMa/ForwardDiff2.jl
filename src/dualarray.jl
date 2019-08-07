@@ -2,6 +2,11 @@ using ForwardDiff
 import ForwardDiff: Dual, value, partials, npartials, tagtype, valtype
 using MacroTools: @forward
 
+# TODO: integrate Dual with ChainRules?
+
+# TODO: Tagging?
+
+# TODO: better printing
 struct DualArray{T,E,M,D<:AbstractArray,I} <: AbstractArray{E,M}
     data::D
     DualArray{T,I}(a::AbstractArray{E,N}) where {T,I,E,N} = new{T,E,N-1,typeof(a),I}(a)
