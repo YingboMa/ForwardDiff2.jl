@@ -1,6 +1,6 @@
 using Test
 using ForwardDiff2: DualArray, tagtype, npartials, value, partials
-using ForwardDiff: value, partials
+using ForwardDiff: value, partials, Dual
 
 @testset "DualArray" begin
     a = rand(2)
@@ -20,12 +20,12 @@ using ForwardDiff: value, partials
 end
 
 @testset "indexing" begin
-    a = reshape(1:60, (5,4,3))
+    a = reshape(collect(1:60), (5,4,3))
     da = DualArray(a)
 
     @test da[9]  == Dual(9, 29, 49)
     @test da[10] == Dual(10, 30, 50)
 
-    @test da[10] = Dual(2,2,2)
+    da[10] = Dual(2,2,2)
     @test da[10] === Dual(2,2,2)
 end
