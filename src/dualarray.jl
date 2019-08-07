@@ -60,24 +60,23 @@ end
 
 Base.eachindex(d::DualArray) = eachindex(@view data(d)[:, 1])
 
-Base.@propagate_inbounds function Base.getindex(d::DualArray, i...)
+Base.@propagate_inbounds function Base.getindex(d::DualArray, i::Int...)
     dd = data(d)
-    val = dd[i..., 1]
-    parts = ntuple(j->dd[i..., j+1], Val(npartials(d)))
-    return Dual(val, parts)
+    # TODO: do something different if dd is not Linear index style
+    ii = LinearIndices(size(d))[i...]
+    val   = dd[ii]
+    slice_len = length(d)
+    parts = ntuple(j->dd[j * slice_len + ii], Val{npartials(d)}())
+    return Dual(val, parts...)
 end
 
-# TODO: linear indexing
-Base.@propagate_inbounds function Base.setindex!(d::DualArray, dual::Dual, i...)
+Base.@propagate_inbounds function Base.setindex!(d::DualArray, dual::Dual, i::Int...)
     dd = data(d)
-    dd[i..., 1] = value(dual)
-    dd[i..., 2:end] .= partials(dual)
-    return dual
-end
+    ii = LinearIndices(size(d))[i...]
+    dd[ii] = value(dual)
 
-Base.@propagate_inbounds function Base.setindex!(d::DualArray, x::Number, i...)
-    dd = data(d)
-    dd[i..., 1] = x
-    dd[i..., 2:end] .= zero(eltype(dd))
-    return x
+    slice_len = length(d)
+    for j = 1:npartials(d)
+        dd[j * slice_len + ii] = partials(dual)[j]
+    end
 end
