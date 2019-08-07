@@ -55,12 +55,14 @@ Base.BroadcastStyle(::DualStyle{M,T,I,D}, B::DefaultArrayStyle) where {M,T,I,D} 
 
 function ForwardDiff.value(d::DualArray)
     n = ndims(d)
-    return @view d[ntuple(_ -> Colon(), Val(n))..., 1]
+    dd = data(d)
+    return @view dd[ntuple(_ -> Colon(), Val(n))..., 1]
 end
 
 function ForwardDiff.partials(d::DualArray)
     n = ndims(d)
-    return @view d[ntuple(_ -> Colon(), Val(n))..., 2:end]
+    dd = data(d)
+    return @view dd[ntuple(_ -> Colon(), Val(n))..., 2:end]
 end
 
 Base.eachindex(d::DualArray) = eachindex(@view data(d)[:, 1])
