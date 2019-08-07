@@ -6,11 +6,31 @@ using MacroTools: @forward
 
 # TODO: Tagging?
 
-# TODO: better printing
 struct DualArray{T,E,M,D<:AbstractArray,I} <: AbstractArray{E,M}
     data::D
     DualArray{T,I}(a::AbstractArray{E,N}) where {T,I,E,N} = new{T,E,N-1,typeof(a),I}(a)
 end
+
+###
+### Printing
+###
+
+function Base.print_array(io::IO, da::DualArray)
+    _dispsize((w, h),) = (w, div(max(h-npartials(da)-1,0), (npartials(da) + 1)))
+    sz = :displaysize => _dispsize(get(io, :displaysize, displaysize(io)))
+
+    Base.printstyled(io, "Primals:\n", bold=true, color=:light_cyan)
+    prev_params = io isa IOContext ? io.dict : ()
+    ioc = IOContext(io, prev_params..., sz)
+    Base.print_array(ioc, value(da))
+    Base.println(io)
+    for i=1:npartials(da)
+        Base.printstyled(io,"Partials($i):\n", bold=true, color=:light_blue)
+        Base.print_array(ioc, partials.(da, i))
+        i !== npartials(da) && Base.println(io)
+    end
+end
+
 DualArray(a::AbstractArray) = DualArray{Nothing,size(a, ndims(a))-1}(a)
 ForwardDiff.npartials(d::DualArray{T,E,M,D,I}) where {T,E,M,D,I} = I
 ForwardDiff.tagtype(::Type{<:DualArray{T}}) where {T} = T
