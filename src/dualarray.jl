@@ -11,7 +11,7 @@ struct DualArray{T,E,M,D<:AbstractArray,I} <: AbstractArray{E,M}
     data::D
     DualArray{T,I}(a::AbstractArray{E,N}) where {T,I,E,N} = new{T,E,N-1,typeof(a),I}(a)
 end
-DualArray(a::AbstractArray) = DualArray{Nothing,1}(a)
+DualArray(a::AbstractArray) = DualArray{Nothing,size(a, ndims(a))}(a)
 ForwardDiff.npartials(d::DualArray{T,E,M,D,I}) where {T,E,M,D,I} = I
 ForwardDiff.tagtype(::Type{<:DualArray{T}}) where {T} = T
 ForwardDiff.tagtype(::T) where {T<:DualArray} = tagtype(T)
