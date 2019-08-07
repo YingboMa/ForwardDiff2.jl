@@ -18,3 +18,14 @@ using ForwardDiff: value, partials
     @test sin.(_x) == value.(dx)
     @test cos.(_x) == partials.(dx, 1)
 end
+
+@testset "indexing" begin
+    a = reshape(1:60, (5,4,3))
+    da = DualArray(a)
+
+    @test da[9]  == Dual(9, 29, 49)
+    @test da[10] == Dual(10, 30, 50)
+
+    @test da[10] = Dual(2,2,2)
+    @test da[10] === Dual(2,2,2)
+end
