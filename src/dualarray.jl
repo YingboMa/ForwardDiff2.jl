@@ -75,13 +75,14 @@ Base.@propagate_inbounds function Base.getindex(d::DualArray, i::Int...)
     return Dual(val, parts...)
 end
 
-Base.@propagate_inbounds function Base.setindex!(d::DualArray, dual::Dual, i::Int...)
+Base.@propagate_inbounds function Base.setindex!(d::DualArray, dual, i::Int...)
     dd = data(d)
     ii = LinearIndices(size(d))[i...]
     dd[ii] = value(dual)
 
     slice_len = length(d)
     for j = 1:npartials(d)
-        dd[j * slice_len + ii] = partials(dual)[j]
+        dd[j * slice_len + ii] = partials(dual, j)
     end
+    return dual
 end
