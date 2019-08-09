@@ -88,3 +88,7 @@ function dualrun(f, args...)
     ctx = DualContext()
     Cassette.overdub(ctx, f, args...)
 end
+
+function Base.show(io::IO, ::Type{<:DualContext})
+    Base.printstyled(io, "DualContext", color=:light_yellow)
+end
