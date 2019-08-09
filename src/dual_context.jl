@@ -5,7 +5,8 @@ using ChainRules
 
 Cassette.@context DualContext
 
-using ForwardDiff: Dual, value, partials, tagtype, ≺
+using ForwardDiff: Dual, value, partials,
+                   tagtype, ≺, DualMismatchError
 
 @inline _dominant_dual(tag, maxi, i) = maxi
 
@@ -17,9 +18,13 @@ using ForwardDiff: Dual, value, partials, tagtype, ≺
     end
 end
 
-_dominant_dual(tag, maxi, i, x, tail...) = _dominant_dual(tag, maxi, i-1, tail...)
+@inline function _dominant_dual(tag, maxi, i, x, tail...)
+    _dominant_dual(tag, maxi, i-1, tail...)
+end
 
-@inline dominant_dual(xs...) = _dominant_dual(nothing, 0, length(xs), reverse(xs)...)
+@inline function dominant_dual(xs...)
+    _dominant_dual(nothing, 0, length(xs), reverse(xs)...)
+end
 
 @inline _value(::Val{T}, x) where T = x
 @inline _value(::Val{T}, d::Dual{T}) where T = value(d)
@@ -41,31 +46,40 @@ end
     end
 end
 
-@inline function overdub(ctx::DualContext,
-                         f,
-                         args...)
+@inline function overdub(ctx::DualContext, f, args...)
+    # find the position of the dual number with the highest
+    # precedence (dominant) tag
     idx = dominant_dual(args...)
     if idx === 0
+        # none of the arguments are dual
         Cassette.recurse(ctx, f, args...)
     else
+        # most dominant tag on the duals
         dtag = tagtype(args[idx])
+
+        # call ChainRules.frule to execute `f` and
+        # get a function that computes the partials
         res = overdub(ctx, frule, f,
                       map(x->_value(Val{dtag}(), x), args)...)
+
         if res === nothing
-            Cassette.recurse(ctx, f, args...)
+            # this means there is no frule (majority of all calls)
+            return Cassette.recurse(ctx, f, args...)
         else
-          # @show dtag
-          # @show args
-            as = map(x->_value(Val{dtag}(), x), args)
-          # @show as
+            # this means a result and one or more partial function
+            # was computed
+            vals, ∂s = res
             ps = map(x->_partials(Val{dtag}(), x), args)
-          # @show ps
-            val, ∂ = res
-            Dual{dtag}(val,
-                       overdub(ctx,
-                               ∂,
-                               map(x->_partials(Val{dtag}(), x),
-                                   args)...))
+
+            if !(∂s isa Tuple)
+                # a single function scalar output
+                return Dual{dtag}(vals, overdub(ctx, ∂s, ps...))
+            else
+                # many partial functions (as many as outputs)
+                return map(vals, ∂s) do val, ∂
+                    Dual{dtag}(val, overdub(ctx, ∂, ps...))
+                end
+            end
         end
     end
 end
