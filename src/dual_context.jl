@@ -5,7 +5,7 @@ using ChainRules
 
 Cassette.@context DualContext
 
-using ForwardDiff: Dual, value, partials,
+using ForwardDiff: Dual, value, partials, Partials,
                    tagtype, ≺, DualMismatchError
 
 @inline _dominant_dual(tag, maxi, i) = maxi
@@ -40,11 +40,18 @@ end
 @inline Base.@propagate_inbounds _partials(::Val{T}, d::Dual{T}, i...) where T = partials(d, i...)
 @inline function _partials(::Val{T}, d::Dual{S}, i...) where {T,S}
     if S ≺ T
-        partials(zero(d))
+        zero(d)
     else
         throw(DualMismatchError(T,S))
     end
 end
+
+using ChainRules
+using ChainRulesCore
+import ChainRules: Wirtinger
+
+ChainRules.Wirtinger(primal::Partials, conjugate::Union{Number, ChainRulesCore.AbstractDifferential}) = Partials(map(p->Wirtinger(p, conjugate), primal.values))
+
 
 @inline overdub(ctx::DualContext, f, a...) = Cassette.recurse(ctx, f, a...)
 @inline overdub(ctx::DualContext, f, a) = _overdub(ctx, f, a)
