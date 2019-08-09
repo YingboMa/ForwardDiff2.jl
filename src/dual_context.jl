@@ -48,9 +48,16 @@ end
 
 using ChainRules
 using ChainRulesCore
-import ChainRules: Wirtinger
+import ChainRulesCore: Wirtinger, mul_zero, Zero
 
-ChainRules.Wirtinger(primal::Partials, conjugate::Union{Number, ChainRulesCore.AbstractDifferential}) = Partials(map(p->Wirtinger(p, conjugate), primal.values))
+function Wirtinger(primal::Partials, conjugate::Union{Number, ChainRulesCore.AbstractDifferential})
+    Partials(map(p->Wirtinger(p, conjugate), primal.values))
+end
+function Wirtinger(primal::Partials, conjugate::Partials)
+    Partials(map((p, c)->Wirtinger(p, c), primal.values, conjugate.values))
+end
+ChainRulesCore.mul_zero(::Zero, p::Partials) = zero(p)
+ChainRulesCore.mul_zero(p::Partials, ::Zero) = zero(p)
 
 
 @inline overdub(ctx::DualContext, f, a...) = Cassette.recurse(ctx, f, a...)
