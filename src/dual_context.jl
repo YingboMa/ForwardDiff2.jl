@@ -10,20 +10,20 @@ using ForwardDiff: Dual, value, partials,
 
 @inline _dominant_dual(tag, maxi, i) = maxi
 
-@inline function _dominant_dual(T, maxi, i, x::Dual{S}, tail...) where {S}
+Base.@pure @inline function _dominant_dual(::Val{T}, maxi, i, x::Dual{S}, tail...) where {S, T}
     if T === nothing || (T !== S && T ≺ S)
-        _dominant_dual(S, i, i-1, tail...)
+        _dominant_dual(Val{S}(), i, i-1, tail...)
     else
-        _dominant_dual(T, maxi, i-1, tail...)
+        _dominant_dual(Val{T}(), maxi, i-1, tail...)
     end
 end
 
-@inline function _dominant_dual(tag, maxi, i, x, tail...)
+Base.@pure @inline function _dominant_dual(tag, maxi, i, x, tail...)
     _dominant_dual(tag, maxi, i-1, tail...)
 end
 
 @inline function dominant_dual(xs...)
-    _dominant_dual(nothing, 0, length(xs), reverse(xs)...)
+    _dominant_dual(Val{nothing}(), 0, length(xs), reverse(xs)...)
 end
 
 @inline _value(::Val{T}, x) where T = x
@@ -46,7 +46,13 @@ end
     end
 end
 
-@inline function overdub(ctx::DualContext, f, args...)
+@inline overdub(ctx::DualContext, f, a...) = Cassette.recurse(ctx, f, a...)
+@inline overdub(ctx::DualContext, f, a) = _overdub(ctx, f, a)
+@inline overdub(ctx::DualContext, f, a, b) = _overdub(ctx, f, a, b)
+@inline overdub(ctx::DualContext, f, a, b, c) = _overdub(ctx, f, a, b, c)
+@inline overdub(ctx::DualContext, f, a, b, c, d) = _overdub(ctx, f, a, b, c, d)
+
+@inline function _overdub(ctx, f, args...)
     # find the position of the dual number with the highest
     # precedence (dominant) tag
     idx = dominant_dual(args...)
