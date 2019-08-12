@@ -19,6 +19,10 @@ macro dtest(expr)
     :(@test Cassette.overdub(test_dualctx, ()->$(esc(expr))))
 end
 
+macro dtest_broken(expr)
+    :(@test_broken Cassette.overdub(test_dualctx, ()->$(esc(expr))))
+end
+
 import Calculus
 
 struct TestTag end
@@ -370,12 +374,12 @@ for N in (0,3), M in (1,4), V in (Int, Float32)
     #----------#
 
     if M > 0 && N > 0
-        @test Dual{1}(FDNUM) / Dual{1}(PRIMAL) === Dual{1}(FDNUM / PRIMAL)
-        @test Dual{1}(PRIMAL) / Dual{1}(FDNUM) === Dual{1}(PRIMAL / FDNUM)
-        @test_broken Dual{1}(FDNUM) / FDNUM2 === Dual{1}(FDNUM / FDNUM2)
-        @test_broken FDNUM / Dual{1}(FDNUM2) === Dual{1}(FDNUM / FDNUM2)
+        @dtest Dual{1}(FDNUM) / Dual{1}(PRIMAL) === Dual{1}(FDNUM / PRIMAL)
+        @dtest Dual{1}(PRIMAL) / Dual{1}(FDNUM) === Dual{1}(PRIMAL / FDNUM)
+        @dtest_broken Dual{1}(FDNUM) / FDNUM2 === Dual{1}(FDNUM / FDNUM2)
+        @dtest_broken FDNUM / Dual{1}(FDNUM2) === Dual{1}(FDNUM / FDNUM2)
         # following may not be exact, see #264
-        @test Dual{1}(FDNUM / PRIMAL, FDNUM2 / PRIMAL) ≈ Dual{1}(FDNUM, FDNUM2) / PRIMAL
+        @dtest Dual{1}(FDNUM / PRIMAL, FDNUM2 / PRIMAL) ≈ Dual{1}(FDNUM, FDNUM2) / PRIMAL
     end
 
     @dtest dual_isapprox(FDNUM / FDNUM2, Dual{TestTag()}(value(FDNUM) / value(FDNUM2), ForwardDiff._div_partials(partials(FDNUM), partials(FDNUM2), value(FDNUM), value(FDNUM2))))

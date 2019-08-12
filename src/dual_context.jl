@@ -93,7 +93,8 @@ ChainRulesCore.mul_zero(p::Partials, ::Zero) = zero(p)
 
             if !(∂s isa Tuple)
                 # a single function scalar output
-                return Dual{dtag}(vals, overdub(ctx, ∂s, ps...))
+                d = overdub(ctx, ∂s, ps...)
+                return Dual{dtag}(vals, d)
             else
                 # many partial functions (as many as outputs)
                 return map(vals, ∂s) do val, ∂
