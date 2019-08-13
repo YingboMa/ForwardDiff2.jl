@@ -3,7 +3,7 @@ module DualTest
 using Test
 using Random
 using ForwardDiff
-using ForwardDiff: Partials, Dual, value, partials
+using ForwardDiff: Partials, Dual, value, partials, tagtype
 
 using Cassette
 
@@ -24,8 +24,6 @@ macro dtest_broken(expr)
 end
 
 import Calculus
-
-struct TestTag end
 
 samerng() = MersenneTwister(1)
 
