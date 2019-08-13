@@ -6,6 +6,7 @@ version = "0.1.0"
 [deps]
 Cassette = "7057c7e9-c182-5462-911a-8362d720325c"
 ChainRules = "082447d4-558c-5d27-93f4-14fc19e9eca2"
+ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 
