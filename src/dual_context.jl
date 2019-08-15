@@ -41,6 +41,9 @@ end
 ChainRulesCore.mul_zero(::Zero, p::Partials) = zero(p)
 ChainRulesCore.mul_zero(p::Partials, ::Zero) = zero(p)
 
+@inline _values(S, xs) = map(x->_value(S, x), xs)
+@inline _partialss(S, xs) = map(x->_partials(S, x), xs)
+
 @inline function overdub(ctx::TaggedCtx{T}, f, args...) where {T}
     if length(args) > 4
         return Cassette.recurse(ctx, f, args...)
@@ -58,8 +61,7 @@ ChainRulesCore.mul_zero(p::Partials, ::Zero) = zero(p)
         S = tagtype(fieldtype(typeof(args), idx))()
         # call ChainRules.frule to execute `f` and
         # get a function that computes the partials
-        res = Cassette.recurse(ctx, frule, f,
-                      map(x->_value(S, x), args)...)
+        res = Cassette.recurse(ctx, frule, f, _values(S, args)...)
 
         if res === nothing
             # this means there is no frule (majority of all calls)
@@ -68,7 +70,7 @@ ChainRulesCore.mul_zero(p::Partials, ::Zero) = zero(p)
             # this means a result and one or more partial function
             # was computed
             vals, ∂s = res
-            ps = map(x->_partials(S, x), args)
+            ps = _partialss(S, args)
 
             if !(∂s isa Tuple)
                 # a single function scalar output
@@ -76,9 +78,9 @@ ChainRulesCore.mul_zero(p::Partials, ::Zero) = zero(p)
                 return Dual{S}(vals, d)
             else
                 # many partial functions (as many as outputs)
-                return map(vals, ∂s) do val, ∂
+                return (S->map(vals, ∂s) do val, ∂
                     Dual{S}(val, overdub(ctx, ∂, ps...))
-                end
+                end)(S)
             end
         end
     end
