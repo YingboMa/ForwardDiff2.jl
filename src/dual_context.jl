@@ -26,7 +26,7 @@ end
 
 @inline Base.@propagate_inbounds _partials(::Type{Tag{T}}, x, i...) where T = partials(x, i...)
 @inline Base.@propagate_inbounds _partials(::Type{Tag{T}}, d::Dual{Tag{T}}, i...) where T = partials(d, i...)
-@inline Base.@propagate_inbounds _partials(::Type{Tag{T}}, x::Dual{S}, i...) where {T,S} = zero(x) # FIXME: Shouldn't this be zero(Dual{T}) ?
+@inline Base.@propagate_inbounds _partials(::Type{Tag{T}}, x::Dual{S}, i...) where {T,S} = partials(zero(Dual{Tag{T}}))
 
 using ChainRules
 using ChainRulesCore
