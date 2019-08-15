@@ -24,9 +24,9 @@ end
 @inline _value(::Type{Tag{T}}, d::Dual{Tag{T}}) where T = value(d)
 
 
-@inline Base.@propagate_inbounds _partials(::Type{Tag{T}}, x, i...) where T = partials(x, i...)
-@inline Base.@propagate_inbounds _partials(::Type{Tag{T}}, d::Dual{Tag{T}}, i...) where T = partials(d, i...)
-@inline Base.@propagate_inbounds _partials(::Type{Tag{T}}, x::Dual{S}, i...) where {T,S} = partials(zero(Dual{Tag{T}}))
+@inline _partials(::Type{Tag{T}}, x, i...) where T = partials(x, i...)
+@inline _partials(::Type{Tag{T}}, d::Dual{Tag{T}}, i...) where T = partials(d, i...)
+@inline _partials(::Type{Tag{T}}, x::Dual{S}, i...) where {T,S} = partials(zero(Dual{Tag{T}}))
 
 using ChainRules
 using ChainRulesCore
