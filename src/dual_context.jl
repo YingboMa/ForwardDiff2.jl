@@ -73,14 +73,14 @@ ChainRulesCore.mul_zero(p::Partials, ::Zero) = zero(p)
             ps = _partialss(S, args)
 
             if !(∂s isa Tuple)
-                # a single function scalar output
+                # a single function (scalar output)
                 d = overdub(ctx, ∂s, ps...)
-                return Dual{S}(vals, d)
+                return Dual{typeof(S)}(vals, d)
             else
                 # many partial functions (as many as outputs)
                 return (S->map(vals, ∂s) do val, ∂
-                    Dual{S}(val, overdub(ctx, ∂, ps...))
-                end)(S)
+                            Dual{S}(val, overdub(ctx, ∂, ps...))
+                        end)(typeof(S))
             end
         end
     end
