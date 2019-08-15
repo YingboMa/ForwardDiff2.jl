@@ -11,7 +11,7 @@ include("tag.jl")
 const TaggedCtx{T} = Context{nametype(DualContext), T}
 
 function dualcontext()
-    DualContext(metadata=dualtag())
+    Cassette.disablehooks(DualContext(metadata=dualtag()))
 end
 
 # Calls to `dualtag` are aware of the current context.
