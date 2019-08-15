@@ -41,8 +41,10 @@ end
 ChainRulesCore.mul_zero(::Zero, p::Partials) = zero(p)
 ChainRulesCore.mul_zero(p::Partials, ::Zero) = zero(p)
 
-
 @inline function overdub(ctx::TaggedCtx{T}, f, args...) where {T}
+    if length(args) > 4
+        return Cassette.recurse(ctx, f, args...)
+    end
     # find the position of the dual number with the highest
     # precedence (dominant) tag
     idx = find_dual(Tag{T}, args...)
@@ -51,10 +53,12 @@ ChainRulesCore.mul_zero(p::Partials, ::Zero) = zero(p)
         Cassette.recurse(ctx, f, args...)
     else
 
+        # We may now start operating for a completely
+        # different tag -- this is OK.
         S = tagtype(fieldtype(typeof(args), idx))
         # call ChainRules.frule to execute `f` and
         # get a function that computes the partials
-        res = overdub(ctx, frule, f,
+        res = Cassette.recurse(ctx, frule, f,
                       map(x->_value(S, x), args)...)
 
         if res === nothing
