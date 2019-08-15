@@ -20,13 +20,13 @@ end
     Tag{T}()
 end
 
-@inline _value(::Type{Tag{T}}, x) where T = x
-@inline _value(::Type{Tag{T}}, d::Dual{Tag{T}}) where T = value(d)
+@inline _value(::Tag{T}, x) where T = x
+@inline _value(::Tag{T}, d::Dual{Tag{T}}) where T = value(d)
 
 
-@inline _partials(::Type{Tag{T}}, x, i...) where T = partials(x, i...)
-@inline _partials(::Type{Tag{T}}, d::Dual{Tag{T}}, i...) where T = partials(d, i...)
-@inline _partials(::Type{Tag{T}}, x::Dual{S}, i...) where {T,S} = partials(zero(Dual{Tag{T}}))
+@inline _partials(::Tag{T}, x, i...) where T = partials(x, i...)
+@inline _partials(::Tag{T}, d::Dual{Tag{T}}, i...) where T = partials(d, i...)
+@inline _partials(::Tag{T}, x::Dual{S}, i...) where {T,S} = partials(zero(Dual{Tag{T}}), i...)
 
 using ChainRules
 using ChainRulesCore
@@ -55,7 +55,7 @@ ChainRulesCore.mul_zero(p::Partials, ::Zero) = zero(p)
 
         # We may now start operating for a completely
         # different tag -- this is OK.
-        S = tagtype(fieldtype(typeof(args), idx))
+        S = tagtype(fieldtype(typeof(args), idx))()
         # call ChainRules.frule to execute `f` and
         # get a function that computes the partials
         res = Cassette.recurse(ctx, frule, f,
