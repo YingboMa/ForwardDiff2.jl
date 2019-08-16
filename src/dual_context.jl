@@ -20,11 +20,11 @@ end
     Tag{T}()
 end
 
-@inline _value(::Tag{T}, x) where T = x
+@inline _value(::Any, x) = x
 @inline _value(::Tag{T}, d::Dual{Tag{T}}) where T = value(d)
 
 
-@inline _partials(::Tag{T}, x, i...) where T = partials(x, i...)
+@inline _partials(::Any, x, i...) = partials(x, i...)
 @inline _partials(::Tag{T}, d::Dual{Tag{T}}, i...) where T = partials(d, i...)
 @inline _partials(::Tag{T}, x::Dual{S}, i...) where {T,S} = partials(zero(Dual{Tag{T}}), i...)
 
