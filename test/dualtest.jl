@@ -36,9 +36,6 @@ dual_isapprox(a, b) = isapprox(a, b)
 dual_isapprox(a::Dual{T,T1,T2}, b::Dual{T,T3,T4}) where {T,T1,T2,T3,T4} = isapprox(value(a), value(b)) && isapprox(partials(a), partials(b))
 dual_isapprox(a::Dual{T,T1,T2}, b::Dual{T3,T4,T5}) where {T,T1,T2,T3,T4,T5} = error("Tags don't match")
 
-ForwardDiff.:≺(::Type{TestTag()}, ::Int) = true
-ForwardDiff.:≺(::Int, ::Type{TestTag()}) = false
-
 for N in (0,3), M in (1,4), V in (Int, Float32)
     println("  ...testing Dual{TestTag(),$V,$N} and Dual{TestTag(),Dual{TestTag(),$V,$M},$N}")
 

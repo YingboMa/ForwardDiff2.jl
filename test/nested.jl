@@ -1,5 +1,43 @@
 using Test
-using ForwardDiff2: Dual, partials, dualrun
+using ForwardDiff2: Dual, partials, dualrun, find_dual
+
+const Tag1 = Tag{Nothing}
+const Tag2 = Tag{Tag1}
+
+@testset "find_dual" begin
+    @test find_dual(Tag1, 0, 0) == 0
+    @test find_dual(Tag1, Dual{Tag1}(1,1), 1) == 1
+    @test find_dual(Tag1, 1, Dual{Tag1}(1,1)) == 2
+    @test find_dual(Tag2, 1, Dual{Tag1}(1,1)) == 2
+    @test find_dual(Tag2, Dual{Tag1}(1,1), 1) == 1
+    @test find_dual(Tag1, Dual{Tag2}(1,1), 1) == 0
+
+    @test find_dual(Tag2, Dual{Tag1}, 1) == 0
+    @test find_dual(Tag1, Dual{Tag2}, 1) == 0
+    @test find_dual(Tag1, Dual{Tag1}, 1) == 0
+end
+
+using Cassette
+Cassette.@context TestCtx
+
+const TaggedTestCtx{T} = Cassette.Context{Cassette.nametype(TestCtx), T}
+
+@inline function find_dual_ctx(::TaggedTestCtx{T}, args...) where T
+    find_dual(Tag{T}, args...)
+end
+
+@testset "find_dual_ctx" begin
+    ctx = TaggedTestCtx(metadata=nothing)
+    @test find_dual_ctx(ctx, 1, Dual{Tag1}(1,1)) == 2
+    @test find_dual_ctx(ctx, Dual{Tag1}(1,1), 1) == 1
+    @test find_dual_ctx(ctx, Dual{Tag1}(1,1), Dual{Tag2}(1,1)) == 1
+    @test find_dual_ctx(ctx, Dual{Tag2}(1,1), Dual{Tag1}(1,1)) == 2
+
+    ctx = TaggedTestCtx(metadata=Tag2())
+    @test find_dual_ctx(ctx, Dual{Tag1}(1,1), Dual{Tag2}(1,1)) == 2
+    @test find_dual_ctx(ctx, Dual{Tag2}(1,1), Dual{Tag1}(1,1)) == 1
+end
+
 function D(f, x)
     dualrun() do
         xx = Dual(x, one(x))
@@ -7,4 +45,7 @@ function D(f, x)
     end
 end
 
-@test D(x -> x * D(y -> x + y, 1), 1) === 1
+
+@testset "nested differentiation" begin
+    @test D(x -> x * D(y -> x + y, 1), 1) === 1
+end
