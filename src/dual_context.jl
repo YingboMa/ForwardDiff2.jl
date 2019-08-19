@@ -44,45 +44,49 @@ ChainRulesCore.mul_zero(p::Partials, ::Zero) = zero(p)
 @inline _values(S, xs) = map(x->_value(S, x), xs)
 @inline _partialss(S, xs) = map(x->_partials(S, x), xs)
 
+@inline function _frule_overdub(ctx, tag::T, f, args...) where T
+    res = Cassette.recurse(ctx, frule, f, _values(tag, args)...)
+
+    if res === nothing
+        # this means there is no frule (majority of all calls)
+        return Cassette.recurse(ctx, f, args...)
+    else
+        # this means a result and one or more partial function
+        # was computed
+        vals, ∂s = res
+        ps = _partialss(tag, args)
+
+        if !(∂s isa Tuple)
+            # a single function (scalar output)
+            d = overdub(ctx, ∂s, ps...)
+            return Dual{T}(vals, d)
+        else
+            # many partial functions (as many as outputs)
+            return map(vals, ∂s) do val, ∂
+                Dual{T}(val, overdub(ctx, ∂, ps...))
+            end
+        end
+    end
+end
+
 @inline function overdub(ctx::TaggedCtx{T}, f, args...) where {T}
-    if length(args) > 4
+    if nfields(args) > 4
         return Cassette.recurse(ctx, f, args...)
     end
-    # find the position of the dual number with the highest
-    # precedence (dominant) tag
-    idx = find_dual(Tag{T}, args...)
+    # find the position of the dual number with the current
+    # context's tag or a child tag.
+    idx = find_dual(Tag{T}(), args...)
     if idx === 0
         # none of the arguments are dual
-        Cassette.recurse(ctx, f, args...)
+        return Cassette.recurse(ctx, f, args...)
     else
 
         # We may now start operating for a completely
         # different tag -- this is OK.
-        S = tagtype(fieldtype(typeof(args), idx))()
+        tag = tagtype(fieldtype(typeof(args), idx))()
         # call ChainRules.frule to execute `f` and
         # get a function that computes the partials
-        res = Cassette.recurse(ctx, frule, f, _values(S, args)...)
-
-        if res === nothing
-            # this means there is no frule (majority of all calls)
-            return Cassette.recurse(ctx, f, args...)
-        else
-            # this means a result and one or more partial function
-            # was computed
-            vals, ∂s = res
-            ps = _partialss(S, args)
-
-            if !(∂s isa Tuple)
-                # a single function (scalar output)
-                d = overdub(ctx, ∂s, ps...)
-                return Dual{typeof(S)}(vals, d)
-            else
-                # many partial functions (as many as outputs)
-                return (S->map(vals, ∂s) do val, ∂
-                            Dual{S}(val, overdub(ctx, ∂, ps...))
-                        end)(typeof(S))
-            end
-        end
+        _frule_overdub(ctx, tag, f, args...)
     end
 end
 

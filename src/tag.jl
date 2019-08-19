@@ -7,7 +7,7 @@ _find_dual(ctx::Type{T}, i, x::Type{<:Dual{T}}, xs...) where {T} = i
 _find_dual(ctx::Type{T}, i, x, xs...) where {T} = _find_dual(ctx, i-1, xs...)
 
 innertagtype(::Type{Tag{T}}) where T = T
-@inline @generated function find_dual(::Type{T}, xs...) where {T<:Tag}
+@inline @generated function find_dual(T::Tag, xs...)
     idx = _find_dual(T, length(xs), reverse(xs)...)
     idx === 0 ?
     _find_dual(innertagtype(T), length(xs), reverse(xs)...) : idx
