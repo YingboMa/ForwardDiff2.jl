@@ -69,10 +69,24 @@ ChainRulesCore.mul_zero(p::Partials, ::Zero) = zero(p)
     end
 end
 
+@inline anydual(x::Dual, ys...) = true
+@inline anydual(x, ys...) = anydual(ys...)
+@inline anydual() = false
+
 @inline function overdub(ctx::TaggedCtx{T}, f, args...) where {T}
+    if !Cassette.canrecurse(ctx, f, args...)
+        return Cassette.fallback(ctx, f, args...)
+    end
     if nfields(args) > 4
         return Cassette.recurse(ctx, f, args...)
     end
+
+    # a short-cut for compilation to cop out if this
+    # call doesn't deal with any dual numbers
+    if !anydual(args...)
+        return Cassette.recurse(ctx, f, args...)
+    end
+
     # find the position of the dual number with the current
     # context's tag or a child tag.
     idx = find_dual(Tag{T}(), args...)
@@ -83,10 +97,10 @@ end
 
         # We may now start operating for a completely
         # different tag -- this is OK.
-        tag = tagtype(fieldtype(typeof(args), idx))()
+        tag = Tag{tagtype(fieldtype(typeof(args), idx))}()
         # call ChainRules.frule to execute `f` and
         # get a function that computes the partials
-        _frule_overdub(ctx, tag, f, args...)
+        return _frule_overdub(ctx, tag, f, args...)
     end
 end
 
