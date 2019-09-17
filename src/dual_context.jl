@@ -1,7 +1,7 @@
 using Cassette
 using ChainRules
 
-import Cassette: overdub, Context, nametype
+import Cassette: overdub, Context, nametype, canrecurse
 import ForwardDiff: Dual, value, partials, Partials, tagtype, dualtag
 
 Cassette.@context DualContext
@@ -19,14 +19,21 @@ end
 @inline function overdub(ctx::C, ::typeof(dualtag)) where {T, C <: TaggedCtx{T}}
     Tag{T}()
 end
+@inline function overdub(ctx::TaggedCtx, ::typeof(find_dual), args...)
+    find_dual(args...)
+end
+
+@inline function overdub(ctx::TaggedCtx, ::typeof(canrecurse), args...)
+    canrecurse(args...)
+end
 
 @inline _value(::Any, x) = x
-@inline _value(::Tag{T}, d::Dual{Tag{T}}) where T = value(d)
+@inline _value(::T, d::Dual{T}) where T = value(d)
 
 
 @inline _partials(::Any, x, i...) = partials(x, i...)
-@inline _partials(::Tag{T}, d::Dual{Tag{T}}, i...) where T = partials(d, i...)
-@inline _partials(::Tag{T}, x::Dual{S}, i...) where {T,S} = partials(zero(Dual{Tag{T}}), i...)
+@inline _partials(::T, d::Dual{T}, i...) where T = partials(d, i...)
+@inline _partials(::T, x::Dual{S}, i...) where {T,S} = partials(zero(Dual{Tag{T}}), i...)
 
 using ChainRules
 using ChainRulesCore
@@ -74,13 +81,13 @@ end
 @inline anydual() = false
 
 @inline function overdub(ctx::TaggedCtx{T}, f, args...) where {T}
-    if !Cassette.canrecurse(ctx, f, args...)
-        return Cassette.fallback(ctx, f, args...)
-    end
     if nfields(args) > 4
         return Cassette.recurse(ctx, f, args...)
     end
 
+    if !Cassette.canrecurse(ctx, f, args...)
+        return Cassette.fallback(ctx, f, args...)
+    end
     # a short-cut for compilation to cop out if this
     # call doesn't deal with any dual numbers
     if !anydual(args...)
@@ -97,7 +104,7 @@ end
 
         # We may now start operating for a completely
         # different tag -- this is OK.
-        tag = Tag{tagtype(fieldtype(typeof(args), idx))}()
+        tag = tagtype(fieldtype(typeof(args), idx))()
         # call ChainRules.frule to execute `f` and
         # get a function that computes the partials
         return _frule_overdub(ctx, tag, f, args...)
