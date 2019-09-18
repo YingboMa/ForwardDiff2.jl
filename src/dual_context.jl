@@ -69,10 +69,9 @@ ChainRulesCore.mul_zero(p::Partials, ::Zero) = zero(p)
     end
 end
 
+@inline overdub(ctx::TaggedCtx, ::typeof(find_dual), args...) = find_dual(args...)
+
 @inline function overdub(ctx::TaggedCtx{T}, f, args...) where {T}
-    if nfields(args) > 4
-        return Cassette.recurse(ctx, f, args...)
-    end
     # find the position of the dual number with the current
     # context's tag or a child tag.
     idx = find_dual(Tag{T}(), args...)
@@ -93,8 +92,4 @@ end
 function dualrun(f, args...)
     ctx = dualcontext()
     Cassette.overdub(ctx, f, args...)
-end
-
-function Base.show(io::IO, ::Type{<:DualContext})
-    Base.printstyled(io, "DualContext", color=:light_yellow)
 end

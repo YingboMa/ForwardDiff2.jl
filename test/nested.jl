@@ -1,20 +1,22 @@
 using Test
-using ForwardDiff2: Dual, partials, dualrun, find_dual
+using ForwardDiff2: Dual, partials, dualrun, find_dual, Tag
 
 const Tag1 = Tag{Nothing}
-const Tag2 = Tag{Tag1}
+const Tag2 = Tag{Tag{Nothing}}
+const tag1 = Tag1()
+const tag2 = Tag2()
 
 @testset "find_dual" begin
-    @test find_dual(Tag1, 0, 0) == 0
-    @test find_dual(Tag1, Dual{Tag1}(1,1), 1) == 1
-    @test find_dual(Tag1, 1, Dual{Tag1}(1,1)) == 2
-    @test find_dual(Tag2, 1, Dual{Tag1}(1,1)) == 2
-    @test find_dual(Tag2, Dual{Tag1}(1,1), 1) == 1
-    @test find_dual(Tag1, Dual{Tag2}(1,1), 1) == 0
+    @test find_dual(tag1, 0, 0) == 0
+    @test find_dual(tag1, Dual{Tag1}(1,1), 1) == 1
+    @test find_dual(tag1, 1, Dual{Tag1}(1,1)) == 2
+    @test find_dual(tag2, 1, Dual{Tag1}(1,1)) == 2
+    @test find_dual(tag2, Dual{Tag1}(1,1), 1) == 1
+    @test find_dual(tag1, Dual{Tag2}(1,1), 1) == 0
 
-    @test find_dual(Tag2, Dual{Tag1}, 1) == 0
-    @test find_dual(Tag1, Dual{Tag2}, 1) == 0
-    @test find_dual(Tag1, Dual{Tag1}, 1) == 0
+    @test find_dual(tag2, Dual{Tag1}, 1) == 0
+    @test find_dual(tag1, Dual{Tag2}, 1) == 0
+    @test find_dual(tag1, Dual{Tag1}, 1) == 0
 end
 
 using Cassette
