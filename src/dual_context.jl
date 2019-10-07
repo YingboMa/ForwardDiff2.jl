@@ -1,5 +1,7 @@
 using Cassette
 using ChainRules
+using ChainRulesCore
+import ChainRulesCore: Wirtinger, mul_zero, Zero
 
 import Cassette: overdub, Context, nametype
 import ForwardDiff: Dual, value, partials, Partials, tagtype, dualtag
@@ -26,11 +28,8 @@ end
 
 @inline _partials(::Any, x, i...) = partials(x, i...)
 @inline _partials(::Tag{T}, d::Dual{Tag{T}}, i...) where T = partials(d, i...)
-@inline _partials(::Tag{T}, x::Dual{S}, i...) where {T,S} = partials(zero(Dual{Tag{T}}), i...)
+@inline _partials(::Tag{T}, x::Dual{S}, i...) where {T,S} = Zero()
 
-using ChainRules
-using ChainRulesCore
-import ChainRulesCore: Wirtinger, mul_zero, Zero
 
 function Wirtinger(primal::Partials, conjugate::Union{Number, ChainRulesCore.AbstractDifferential})
     Partials(map(p->Wirtinger(p, conjugate), primal.values))
@@ -38,9 +37,6 @@ end
 function Wirtinger(primal::Partials, conjugate::Partials)
     Partials(map((p, c)->Wirtinger(p, c), primal.values, conjugate.values))
 end
-ChainRulesCore.mul_zero(::Zero, p::Partials) = zero(p)
-ChainRulesCore.mul_zero(p::Partials, ::Zero) = zero(p)
-
 @inline _values(S, xs) = map(x->_value(S, x), xs)
 @inline _partialss(S, xs) = map(x->_partials(S, x), xs)
 
@@ -53,17 +49,17 @@ ChainRulesCore.mul_zero(p::Partials, ::Zero) = zero(p)
     else
         # this means a result and one or more partial function
         # was computed
-        vals, ∂s = res
+        vals, pushfwd = res
         ps = _partialss(tag, args)
 
-        if !(∂s isa Tuple)
+        if !(pushfwd isa Tuple)
             # a single function (scalar output)
-            d = overdub(ctx, ∂s, ps...)
+            d = overdub(ctx, pushfwd, Zero(), ps...)
             return Dual{T}(vals, d)
         else
             # many partial functions (as many as outputs)
-            return map(vals, ∂s) do val, ∂
-                Dual{T}(val, overdub(ctx, ∂, ps...))
+            return map(vals, pushfwd) do val, ∂
+                Dual{T}(val, overdub(ctx, ∂, Zero(), ps...))
             end
         end
     end
