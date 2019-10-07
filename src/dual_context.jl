@@ -67,21 +67,27 @@ end
 
 @inline overdub(ctx::TaggedCtx, ::typeof(find_dual), args...) = find_dual(args...)
 
-@inline function overdub(ctx::TaggedCtx{T}, f, args...) where {T}
-    # find the position of the dual number with the current
-    # context's tag or a child tag.
-    idx = find_dual(Tag{T}(), args...)
-    if idx === 0
-        # none of the arguments are dual
-        return Cassette.recurse(ctx, f, args...)
-    else
+for n = 1:4
+    argnames = [Symbol("arg_$i") for i in 1:n]
+    @eval @inline function overdub(ctx::TaggedCtx{T}, f, $(argnames...)) where {T}
+        # find the position of the dual number with the current
+        # context's tag or a child tag.
+        if !Cassette.canrecurse(ctx, f, $(argnames...))
+            return Cassette.fallback(ctx, f, $(argnames...))
+        end
 
-        # We may now start operating for a completely
-        # different tag -- this is OK.
-        tag = tagtype(fieldtype(typeof(args), idx))()
-        # call ChainRules.frule to execute `f` and
-        # get a function that computes the partials
-        _frule_overdub(ctx, tag, f, args...)
+        idx = find_dual(Tag{T}(), $(argnames...))
+        if idx === 0
+            # none of the arguments are dual
+            return Cassette.recurse(ctx, f, $(argnames...))
+        else
+            # We may now start operating for a completely
+            # different tag -- this is OK.
+            tag = tagtype(fieldtype(typeof(tuple($(argnames...))), idx))()
+            # call ChainRules.frule to execute `f` and
+            # get a function that computes the partials
+            _frule_overdub(ctx, tag, f, $(argnames...))
+        end
     end
 end
 
