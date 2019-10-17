@@ -8,12 +8,13 @@ import ForwardDiff: Dual, value, partials, Partials, tagtype, dualtag
 
 Cassette.@context DualContext
 
+include("custom_dispatch.jl")
 include("tag.jl")
 
 const TaggedCtx{T} = Context{nametype(DualContext), T}
 
 function dualcontext()
-    Cassette.disablehooks(DualContext(metadata=dualtag()))
+    Cassette.disablehooks(DualContext(metadata=dualtag(), pass=CustomDispatchPass))
 end
 
 # Calls to `dualtag` are aware of the current context.
@@ -21,6 +22,8 @@ end
 @inline function overdub(ctx::C, ::typeof(dualtag)) where {T, C <: TaggedCtx{T}}
     Tag{T}()
 end
+
+@inline overdub(ctx::TaggedCtx, ::typeof(find_dual), args...) = find_dual(args...)
 
 @inline _value(::Any, x) = x
 @inline _value(::Tag{T}, d::Dual{Tag{T}}) where T = value(d)
@@ -65,29 +68,28 @@ end
     end
 end
 
-@inline overdub(ctx::TaggedCtx, ::typeof(find_dual), args...) = find_dual(args...)
+@inline anydual(x, xs...) = anydual(xs...)
+@inline anydual(x::Dual, xs...) = true
+@inline anydual() = false
 
-for n = 1:4
-    argnames = [Symbol("arg_$i") for i in 1:n]
-    @eval @inline function overdub(ctx::TaggedCtx{T}, f, $(argnames...)) where {T}
-        # find the position of the dual number with the current
-        # context's tag or a child tag.
-        if !Cassette.canrecurse(ctx, f, $(argnames...))
-            return Cassette.fallback(ctx, f, $(argnames...))
-        end
+@inline isinteresting(ctx::TaggedCtx, f, a) = anydual(a)
+@inline isinteresting(ctx::TaggedCtx, f, a, b) = anydual(a, b)
+@inline isinteresting(ctx::TaggedCtx, f, a, b, c) = anydual(a, b, c)
+@inline isinteresting(ctx::TaggedCtx, f, a, b, c, d) = anydual(a, b, c, d)
+@inline isinteresting(ctx::TaggedCtx, f, args...) = false
 
-        idx = find_dual(Tag{T}(), $(argnames...))
-        if idx === 0
-            # none of the arguments are dual
-            return Cassette.recurse(ctx, f, $(argnames...))
-        else
-            # We may now start operating for a completely
-            # different tag -- this is OK.
-            tag = tagtype(fieldtype(typeof(tuple($(argnames...))), idx))()
-            # call ChainRules.frule to execute `f` and
-            # get a function that computes the partials
-            _frule_overdub(ctx, tag, f, $(argnames...))
-        end
+@inline function alternative(ctx::TaggedCtx{T}, f, args...) where {T}
+    idx = find_dual(Tag{T}(), args...)
+    if idx === 0
+        # none of the arguments are dual
+        return Cassette.recurse(ctx, f, args...)
+    else
+        # We may now start operating for a completely
+        # different tag -- this is OK.
+        tag = tagtype(fieldtype(typeof(args), idx))()
+        # call ChainRules.frule to execute `f` and
+        # get a function that computes the partials
+        return _frule_overdub(ctx, tag, f, args...)
     end
 end
 
