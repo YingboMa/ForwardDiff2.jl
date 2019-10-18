@@ -1,7 +1,7 @@
 using Cassette
 using ChainRules
 using ChainRulesCore
-import ChainRulesCore: Wirtinger, mul_zero, Zero
+import ChainRulesCore: Wirtinger, Zero
 
 import Cassette: overdub, Context, nametype
 import ForwardDiff: Dual, value, partials, Partials, tagtype, dualtag
@@ -43,8 +43,9 @@ end
 @inline _values(S, xs) = map(x->_value(S, x), xs)
 @inline _partialss(S, xs) = map(x->_partials(S, x), xs)
 
-@inline function _frule_overdub(ctx, tag::T, f, args...) where T
-    res = Cassette.recurse(ctx, frule, f, _values(tag, args)...)
+@inline function _frule_overdub(ctx::TaggedCtx{S}, tag::T, f, args...) where {T,S}
+    vs = _values(tag, args)
+    res = Cassette.overdub(ctx, frule, f, vs...)
 
     if res === nothing
         # this means there is no frule (majority of all calls)
