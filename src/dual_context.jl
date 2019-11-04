@@ -45,11 +45,16 @@ end
 
 @inline function _frule_overdub(ctx::TaggedCtx{S}, tag::T, f, args...) where {T,S}
     vs = _values(tag, args)
-    res = Cassette.overdub(ctx, frule, f, vs...)
+    res = alternative(ctx, frule, f, vs...)
 
     if res === nothing
         # this means there is no frule (majority of all calls)
-        return Cassette.recurse(ctx, f, args...)
+        if f === frule # PSYCH!!
+            # do not do frule of frule!
+            return alternative(ctx, f, vs...)
+        else
+            return Cassette.recurse(ctx, f, args...)
+        end
     else
         # this means a result and one or more partial function
         # was computed
@@ -83,10 +88,8 @@ end
     idx = find_dual(Tag{T}(), args...)
     if idx === 0
         # none of the arguments are dual
-        return Cassette.recurse(ctx, f, args...)
+        return overdub(ctx, f, args...)
     else
-        # We may now start operating for a completely
-        # different tag -- this is OK.
         tag = tagtype(fieldtype(typeof(args), idx))()
         # call ChainRules.frule to execute `f` and
         # get a function that computes the partials
@@ -96,5 +99,5 @@ end
 
 function dualrun(f, args...)
     ctx = dualcontext()
-    Cassette.overdub(ctx, f, args...)
+    overdub(ctx, f, args...)
 end
