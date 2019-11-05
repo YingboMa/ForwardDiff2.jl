@@ -78,11 +78,16 @@ end
 @inline anydual(x::Dual, xs...) = true
 @inline anydual() = false
 
+@inline isinteresting(ctx::TaggedCtx, f::typeof(Core._apply), g, xs...) = Core._apply(isinteresting, (ctx, g), xs...)
 @inline isinteresting(ctx::TaggedCtx, f, a) = anydual(a)
 @inline isinteresting(ctx::TaggedCtx, f, a, b) = anydual(a, b)
 @inline isinteresting(ctx::TaggedCtx, f, a, b, c) = anydual(a, b, c)
 @inline isinteresting(ctx::TaggedCtx, f, a, b, c, d) = anydual(a, b, c, d)
 @inline isinteresting(ctx::TaggedCtx, f, args...) = false
+
+@inline function alternative(ctx::TaggedCtx{T}, f::typeof(Core._apply), g, args...) where {T}
+    Core._apply(alternative, (ctx, g), args...)
+end
 
 @inline function alternative(ctx::TaggedCtx{T}, f, args...) where {T}
     idx = find_dual(Tag{T}(), args...)
