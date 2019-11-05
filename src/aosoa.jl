@@ -1,7 +1,8 @@
+using SIMD
 import Base.Cartesian: @ntuple
 const intlog2 = Core.Intrinsics.cttz_int
 
-const Bucket{NFields, NElems} = NTuple{NFields, NTuple{NElems}}
+const Bucket{NFields, NElems} = NTuple{NFields, Vec{NElems}}
 
 Base.@pure @inline function Base.eltype(T::Type{<:Bucket})
     Tuple{map(eltype, T.parameters)...}
@@ -20,7 +21,7 @@ bucketwidth(::AoSoA{<:Any, <:Bucket{<:Any, NElems}}) where {NElems} = NElems
 @generated function makebuckets!(arr, ::Val{bucketwidth}, columns::Vararg{<:Any, N}) where {bucketwidth, N}
     quote
         for k in 0:length(arr)-1
-            arr[k+1] = @ntuple $N j ->(@ntuple $bucketwidth i->columns[j][k * $bucketwidth + i])
+            arr[k+1] = @ntuple $N j ->Vec((@ntuple $bucketwidth i->columns[j][k * $bucketwidth + i]))
         end
         return arr
     end
@@ -32,7 +33,7 @@ function makeAoSoA(::Val{bucketwidth}, columns...) where {bucketwidth}
     @assert 2^exp == bucketwidth
     @assert all(x->length(x) == len, columns)
     @assert len % bucketwidth == 0
-    BucketT = Tuple{map(T->NTuple{bucketwidth, T}, eltype.(columns))...}
+    BucketT = Tuple{map(T->Vec{bucketwidth, T}, eltype.(columns))...}
     AoSoA(makebuckets!(Vector{BucketT}(undef, div(len, bucketwidth)), Val{bucketwidth}(), columns...))
 end
 
