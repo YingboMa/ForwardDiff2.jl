@@ -1,7 +1,6 @@
 module ForwardDiff2
 
-export DualArray, jacobian
-
+include("dualnumber.jl")
 include("custom_dispatch.jl")
 include("tag.jl")
 include("dualarray.jl")

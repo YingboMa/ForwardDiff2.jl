@@ -1,5 +1,3 @@
-import ForwardDiff: Dual
-
 struct Tag{Parent} end
 
 @inline _find_dual(ctx::T, l, i) where {T} = 0

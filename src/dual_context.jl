@@ -4,7 +4,6 @@ using ChainRulesCore
 import ChainRulesCore: Wirtinger, Zero
 
 using Cassette: overdub, Context, nametype
-import ForwardDiff: Dual, value, partials, Partials, tagtype, dualtag
 
 Cassette.@context DualContext
 

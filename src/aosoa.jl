@@ -15,7 +15,7 @@ struct AoSoA{T, Storage <: Bucket} <: AbstractVector{T}
     storage::Vector{Storage}
     function AoSoA(storage)
         S = eltype(storage)
-        new{eltype(S), S}(storage)
+        new{eltype(S),S}(storage)
     end
 end
 
