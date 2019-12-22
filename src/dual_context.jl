@@ -3,27 +3,23 @@ using ChainRules
 using ChainRulesCore
 import ChainRulesCore: Wirtinger, Zero
 
-import Cassette: overdub, Context, nametype
+using Cassette: overdub, Context, nametype
 import ForwardDiff: Dual, value, partials, Partials, tagtype, dualtag
 
 Cassette.@context DualContext
 
-include("custom_dispatch.jl")
-include("tag.jl")
-
-const TaggedCtx{T} = Context{nametype(DualContext), T}
+const TaggedCtx{T} = Context{nametype(DualContext),T}
 
 function dualcontext()
     Cassette.disablehooks(DualContext(metadata=dualtag(), pass=CustomDispatchPass))
 end
 
-# Calls to `dualtag` are aware of the current context.
-# Note that the tags produced in the current context are Tag{T} where T is the metadata type of the context
-@inline function overdub(ctx::C, ::typeof(dualtag)) where {T, C <: TaggedCtx{T}}
-    Tag{T}()
-end
+# Calls to `dualtag` are aware of the current context. Note that the tags
+# produced in the current context are `Tag{T} where T` is the metadata type of
+# the context.
+@inline Cassette.overdub(ctx::C, ::typeof(dualtag)) where {T,C<:TaggedCtx{T}} = Tag{T}()
 
-@inline overdub(ctx::TaggedCtx, ::typeof(find_dual), args...) = find_dual(args...)
+@inline Cassette.overdub(ctx::TaggedCtx, ::typeof(find_dual), args...) = find_dual(args...)
 
 @inline _value(::Any, x) = x
 @inline _value(::Tag{T}, d::Dual{Tag{T}}) where T = value(d)
@@ -34,11 +30,11 @@ end
 @inline _partials(::Tag{T}, x::Dual{S}, i...) where {T,S} = Zero()
 
 
-function Wirtinger(primal::Partials, conjugate::Union{Number, ChainRulesCore.AbstractDifferential})
-    Partials(map(p->Wirtinger(p, conjugate), primal.values))
+function Wirtinger(primal::Partials, conjugate::Union{Number,ChainRulesCore.AbstractDifferential})
+    return Partials(map(p->Wirtinger(p, conjugate), primal.values))
 end
 function Wirtinger(primal::Partials, conjugate::Partials)
-    Partials(map((p, c)->Wirtinger(p, c), primal.values, conjugate.values))
+    return Partials(map((p, c)->Wirtinger(p, c), primal.values, conjugate.values))
 end
 @inline _values(S, xs) = map(x->_value(S, x), xs)
 @inline _partialss(S, xs) = map(x->_partials(S, x), xs)

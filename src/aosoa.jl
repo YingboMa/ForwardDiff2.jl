@@ -1,3 +1,6 @@
+#####
+##### Experimental
+#####
 using SIMD
 import Base.Cartesian: @ntuple
 const intlog2 = Core.Intrinsics.cttz_int
@@ -29,7 +32,7 @@ end
 
 function makeAoSoA(::Val{bucketwidth}, columns...) where {bucketwidth}
     len = length(first(columns))
-    exp = intlog2(UInt(bucketwidth)) 
+    exp = intlog2(UInt(bucketwidth))
     @assert 2^exp == bucketwidth
     @assert all(x->length(x) == len, columns)
     @assert len % bucketwidth == 0

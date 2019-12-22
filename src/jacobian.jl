@@ -4,6 +4,7 @@ function seed!(partials)
                  1:ndims(partials)-1) + 1
 
     partials[1:stride:length(partials)] .= one(eltype(partials))
+    return nothing
 end
 
 function jacobian(f, x::AbstractVector)

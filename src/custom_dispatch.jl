@@ -1,4 +1,4 @@
-import Core: SSAValue
+using Core: SSAValue
 using Cassette
 
 function isinteresting end
@@ -76,7 +76,7 @@ function rewrite_ir(ctx, ref)
     ir = copy(ir)
 
     Cassette.insert_statements!(ir.code, ir.codelocs,
-        (stmt, i) -> Base.Meta.isexpr(stmt, :call) ? 8 : nothing, 
+        (stmt, i) -> Base.Meta.isexpr(stmt, :call) ? 8 : nothing,
         (stmt, i) -> (s = newslot!(ir); rewrite_call(ctx, stmt, s, i)))
 
     ir.ssavaluetypes = length(ir.code)
