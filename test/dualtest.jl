@@ -3,7 +3,7 @@ module DualTest
 using Test
 using Random
 using ForwardDiff
-using ForwardDiff: Partials, Dual, value, partials
+using ForwardDiff: Partials, Dual, value, partials, tagtype
 
 using Cassette
 
@@ -25,8 +25,6 @@ end
 
 import Calculus
 
-struct TestTag end
-
 samerng() = MersenneTwister(1)
 
 # By lower-bounding the Int range at 2, we avoid cases where differentiating an
@@ -37,9 +35,6 @@ intrand(V) = V == Int ? rand(2:10) : rand(V)
 dual_isapprox(a, b) = isapprox(a, b)
 dual_isapprox(a::Dual{T,T1,T2}, b::Dual{T,T3,T4}) where {T,T1,T2,T3,T4} = isapprox(value(a), value(b)) && isapprox(partials(a), partials(b))
 dual_isapprox(a::Dual{T,T1,T2}, b::Dual{T3,T4,T5}) where {T,T1,T2,T3,T4,T5} = error("Tags don't match")
-
-ForwardDiff.:≺(::Type{TestTag()}, ::Int) = true
-ForwardDiff.:≺(::Int, ::Type{TestTag()}) = false
 
 for N in (0,3), M in (1,4), V in (Int, Float32)
     println("  ...testing Dual{TestTag(),$V,$N} and Dual{TestTag(),Dual{TestTag(),$V,$M},$N}")

@@ -1,7 +1,3 @@
-using ForwardDiff
-import ForwardDiff: Dual, value, partials, npartials, tagtype, valtype
-using MacroTools: @forward
-
 # TODO: integrate Dual with ChainRules?
 
 # TODO: Tagging?
@@ -19,22 +15,23 @@ function Base.print_array(io::IO, da::DualArray)
     _dispsize((w, h),) = (w, div(max(h-npartials(da)-1,0), (npartials(da) + 1)))
     sz = :displaysize => _dispsize(get(io, :displaysize, displaysize(io)))
 
-    Base.printstyled(io, "Primals:\n", bold=true, color=:light_cyan)
+    Base.printstyled(io, "Primals:\n", bold=false, color=2)
     prev_params = io isa IOContext ? io.dict : ()
     ioc = IOContext(io, prev_params..., sz)
     Base.print_array(ioc, value(da))
     Base.println(io)
     for i=1:npartials(da)
-        Base.printstyled(io,"Partials($i):\n", bold=true, color=:light_blue)
+        Base.printstyled(io,"Partials($i):\n", bold=false, color=3)
         Base.print_array(ioc, partials.(da, i))
         i !== npartials(da) && Base.println(io)
     end
+    return nothing
 end
 
 DualArray(a::AbstractArray) = DualArray{Nothing,size(a, ndims(a))-1}(a)
-ForwardDiff.npartials(d::DualArray{T,E,M,D,I}) where {T,E,M,D,I} = I
-ForwardDiff.tagtype(::Type{<:DualArray{T}}) where {T} = T
-ForwardDiff.tagtype(::T) where {T<:DualArray} = tagtype(T)
+npartials(d::DualArray{T,E,M,D,I}) where {T,E,M,D,I} = I
+tagtype(::Type{<:DualArray{T}}) where {T} = T
+tagtype(::T) where {T<:DualArray} = tagtype(T)
 data(d::DualArray) = d.data
 
 ###
@@ -73,13 +70,13 @@ Base.BroadcastStyle(::DualStyle{M,T,I,D}, ::DualStyle{M,T,I,V}) where {M,T,I,D,V
 Base.BroadcastStyle(::DualStyle{M,T,I,D}, B::BroadcastStyle) where {M,T,I,D} = DualStyle{M,T,I,typeof(Base.BroadcastStyle(D(), B))}()
 Base.BroadcastStyle(::DualStyle{M,T,I,D}, B::DefaultArrayStyle) where {M,T,I,D} = DualStyle{M,T,I,typeof(Base.BroadcastStyle(D(), B))}()
 
-function ForwardDiff.value(d::DualArray)
+function value(d::DualArray)
     n = ndims(d)
     dd = data(d)
     return @view dd[ntuple(_ -> Colon(), Val(n))..., 1]
 end
 
-function ForwardDiff.partials(d::DualArray)
+function partials(d::DualArray)
     n = ndims(d)
     dd = data(d)
     return @view dd[ntuple(_ -> Colon(), Val(n))..., 2:end]

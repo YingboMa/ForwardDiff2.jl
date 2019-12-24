@@ -1,115 +1,113 @@
 using Cassette
-
-import Cassette: overdub
 using ChainRules
+using ChainRulesCore
+import ChainRulesCore: Wirtinger, Zero
+
+using Cassette: overdub, Context, nametype
 
 Cassette.@context DualContext
 
-using ForwardDiff: Dual, value, partials, Partials,
-                   tagtype, ≺, DualMismatchError
+const TaggedCtx{T} = Context{nametype(DualContext),T}
 
-@inline _dominant_dual(tag, maxi, i) = maxi
-
-Base.@pure @inline function _dominant_dual(::Val{T}, maxi, i, x::Dual{S}, tail...) where {S, T}
-    if T === nothing || (T !== S && T ≺ S)
-        _dominant_dual(Val{S}(), i, i-1, tail...)
-    else
-        _dominant_dual(Val{T}(), maxi, i-1, tail...)
-    end
+function dualcontext()
+    Cassette.disablehooks(DualContext(metadata=dualtag(), pass=CustomDispatchPass))
 end
 
-Base.@pure @inline function _dominant_dual(tag, maxi, i, x, tail...)
-    _dominant_dual(tag, maxi, i-1, tail...)
-end
+# Calls to `dualtag` are aware of the current context. Note that the tags
+# produced in the current context are `Tag{T} where T` is the metadata type of
+# the context.
+@inline Cassette.overdub(ctx::C, ::typeof(dualtag)) where {T,C<:TaggedCtx{T}} = Tag{T}()
 
-@inline function dominant_dual(xs...)
-    _dominant_dual(Val{nothing}(), 0, length(xs), reverse(xs)...)
-end
+@inline Cassette.overdub(ctx::TaggedCtx, ::typeof(find_dual), args...) = find_dual(args...)
 
-@inline _value(::Val{T}, x) where T = x
-@inline _value(::Val{T}, d::Dual{T}) where T = value(d)
-@inline function _value(::Val{T}, d::Dual{S}) where {T,S}
-    if S ≺ T
-        d
-    else
-        throw(DualMismatchError(T,S))        
-    end
-end
+@inline _value(::Any, x) = x
+@inline _value(::Tag{T}, d::Dual{Tag{T}}) where T = value(d)
 
-@inline Base.@propagate_inbounds _partials(::Val{T}, x, i...) where T = partials(x, i...)
-@inline Base.@propagate_inbounds _partials(::Val{T}, d::Dual{T}, i...) where T = partials(d, i...)
-@inline function _partials(::Val{T}, d::Dual{S}, i...) where {T,S}
-    if S ≺ T
-        zero(d)
-    else
-        throw(DualMismatchError(T,S))
-    end
-end
 
-using ChainRules
-using ChainRulesCore
-import ChainRulesCore: Wirtinger, mul_zero, Zero
+@inline _partials(::Any, x, i...) = partials(x, i...)
+@inline _partials(::Tag{T}, d::Dual{Tag{T}}, i...) where T = partials(d, i...)
+@inline _partials(::Tag{T}, x::Dual{S}, i...) where {T,S} = Zero()
 
-function Wirtinger(primal::Partials, conjugate::Union{Number, ChainRulesCore.AbstractDifferential})
-    Partials(map(p->Wirtinger(p, conjugate), primal.values))
+
+function Wirtinger(primal::Partials, conjugate::Union{Number,ChainRulesCore.AbstractDifferential})
+    return Partials(map(p->Wirtinger(p, conjugate), primal.values))
 end
 function Wirtinger(primal::Partials, conjugate::Partials)
-    Partials(map((p, c)->Wirtinger(p, c), primal.values, conjugate.values))
+    return Partials(map((p, c)->Wirtinger(p, c), primal.values, conjugate.values))
 end
-ChainRulesCore.mul_zero(::Zero, p::Partials) = zero(p)
-ChainRulesCore.mul_zero(p::Partials, ::Zero) = zero(p)
+@inline _values(S, xs) = map(x->_value(S, x), xs)
+@inline _partialss(S, xs) = map(x->_partials(S, x), xs)
 
+@inline function _frule_overdub(ctx::TaggedCtx{S}, tag::T, f, args...) where {T,S}
+    vs = _values(tag, args)
+    res = alternative(ctx, frule, f, vs...)
 
-@inline overdub(ctx::DualContext, f, a...) = Cassette.recurse(ctx, f, a...)
-@inline overdub(ctx::DualContext, f, a) = _overdub(ctx, f, a)
-@inline overdub(ctx::DualContext, f, a, b) = _overdub(ctx, f, a, b)
-@inline overdub(ctx::DualContext, f, a, b, c) = _overdub(ctx, f, a, b, c)
-@inline overdub(ctx::DualContext, f, a, b, c, d) = _overdub(ctx, f, a, b, c, d)
-
-@inline function _overdub(ctx, f, args...)
-    # find the position of the dual number with the highest
-    # precedence (dominant) tag
-    idx = dominant_dual(args...)
-    if idx === 0
-        # none of the arguments are dual
-        Cassette.recurse(ctx, f, args...)
-    else
-        # most dominant tag on the duals
-        dtag = tagtype(args[idx])
-
-        # call ChainRules.frule to execute `f` and
-        # get a function that computes the partials
-        res = overdub(ctx, frule, f,
-                      map(x->_value(Val{dtag}(), x), args)...)
-
-        if res === nothing
-            # this means there is no frule (majority of all calls)
-            return Cassette.recurse(ctx, f, args...)
+    if res === nothing
+        # this means there is no frule (majority of all calls)
+        if f === frule # PSYCH!!
+            # do not do frule of frule!
+            return alternative(ctx, f, vs...)
         else
-            # this means a result and one or more partial function
-            # was computed
-            vals, ∂s = res
-            ps = map(x->_partials(Val{dtag}(), x), args)
+            return Cassette.recurse(ctx, f, args...)
+        end
+    else
+        # this means a result and one or more partial function
+        # was computed
+        vals, pushfwd = res
+        ps = _partialss(tag, args)
 
-            if !(∂s isa Tuple)
-                # a single function scalar output
-                d = overdub(ctx, ∂s, ps...)
-                return Dual{dtag}(vals, d)
-            else
-                # many partial functions (as many as outputs)
-                return map(vals, ∂s) do val, ∂
-                    Dual{dtag}(val, overdub(ctx, ∂, ps...))
-                end
+        if !(pushfwd isa Tuple)
+            # a single function (scalar output)
+            d = overdub(ctx, pushfwd, Zero(), ps...)
+            return Dual{T}(vals, d)
+        else
+            # many partial functions (as many as outputs)
+            return map(vals, pushfwd) do val, ∂
+                Dual{T}(val, overdub(ctx, ∂, Zero(), ps...))
             end
         end
     end
 end
 
-function dualrun(f, args...)
-    ctx = DualContext()
-    Cassette.overdub(ctx, f, args...)
+@inline anydual(x, xs...) = anydual(xs...)
+@inline anydual(x::Dual, xs...) = true
+@inline anydual() = false
+
+# necessary special cases:
+
+# this makes splatting work...
+@inline isinteresting(ctx::TaggedCtx, f::typeof(Core._apply), g, xs...) = Core._apply(isinteresting, (ctx, g), xs...)
+@inline function alternative(ctx::TaggedCtx{T}, f::typeof(Core._apply), g, args...) where {T}
+    Core._apply(alternative, (ctx, g), args...)
 end
 
-function Base.show(io::IO, ::Type{<:DualContext})
-    Base.printstyled(io, "DualContext", color=:light_yellow)
+# this makes `log` work by making throw_complex_domainerror inferable, but not really sure why
+@inline isinteresting(ctx::TaggedCtx, f::typeof(Core.throw), xs) = true
+# add `DualContext` here to avoid ambiguity
+@inline alternative(ctx::Union{DualContext,TaggedCtx}, f::typeof(Core.throw), arg) = throw(arg)
+
+# actually interesting:
+
+@inline isinteresting(ctx::TaggedCtx, f, a) = anydual(a)
+@inline isinteresting(ctx::TaggedCtx, f, a, b) = anydual(a, b)
+@inline isinteresting(ctx::TaggedCtx, f, a, b, c) = anydual(a, b, c)
+@inline isinteresting(ctx::TaggedCtx, f, a, b, c, d) = anydual(a, b, c, d)
+@inline isinteresting(ctx::TaggedCtx, f, args...) = false
+
+@inline function alternative(ctx::TaggedCtx{T}, f, args...) where {T}
+    idx = find_dual(Tag{T}(), args...)
+    if idx === 0
+        # none of the arguments are dual
+        return overdub(ctx, f, args...)
+    else
+        tag = tagtype(fieldtype(typeof(args), idx))()
+        # call ChainRules.frule to execute `f` and
+        # get a function that computes the partials
+        return _frule_overdub(ctx, tag, f, args...)
+    end
+end
+
+function dualrun(f, args...)
+    ctx = dualcontext()
+    overdub(ctx, f, args...)
 end
