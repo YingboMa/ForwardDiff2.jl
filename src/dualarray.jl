@@ -1,6 +1,6 @@
-# TODO: integrate Dual with ChainRules?
-
+using StaticArrays: SVector
 # TODO: Tagging?
+# TODO: Integrate better with SVector. Maybe even use SIMD.jl?
 
 struct DualArray{T,E,M,D<:AbstractArray,I} <: AbstractArray{E,M}
     data::D
@@ -90,8 +90,8 @@ Base.@propagate_inbounds function Base.getindex(d::DualArray, i::Int...)
     ii = LinearIndices(size(d))[i...]
     val   = dd[ii]
     slice_len = length(d)
-    parts = ntuple(j->dd[j * slice_len + ii], Val{npartials(d)}())
-    return Dual(val, parts...)
+    parts = ntuple(j->dd[j * slice_len + ii], Val(npartials(d)))
+    return Dual(val, SVector(parts))
 end
 
 Base.@propagate_inbounds function Base.setindex!(d::DualArray, dual, i::Int...)
