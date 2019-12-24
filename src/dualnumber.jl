@@ -100,9 +100,13 @@ end
 # intercept calls to dualtag
 dualtag() = nothing
 
-@inline Dual{T}(value::V, partials::P) where {T,V,P} = Dual{T,V,P}(value, partials)
+@inline function Dual{T}(value::V, partials::P) where {T,V,P}
+    Q = promote_type(bottomvaluetype(V), eltype(P))
+    partials′ = convert.(Q, partials)
+    Dual{T,V,typeof(partials′)}(value, partials′)
+end
 #@inline Dual{T}(value::V, ::Chunk{N}, p::Val{i}) where {T,V,P,i} = Dual{T}(value, single_seed(Partials{N,V}, p))
-@inline Dual(args...) = Dual{typeof(dualtag())}(args...)
+@inline Dual(value, partials) = Dual{typeof(dualtag())}(value, partials)
 
 # we define these special cases so that the "constructor <--> convert" pun holds for `Dual`
 @inline Dual{T,V,P}(x::Dual{T,V,P}) where {T,V,P} = x
@@ -114,6 +118,8 @@ dualtag() = nothing
 # Utility/Accessor Functions #
 ##############################
 
+@inline bottomvaluetype(::Type{Dual{T,V,P}}) where {T,V,P} = bottomvaluetype(V)
+@inline bottomvaluetype(::Type{T}) where {T<:Any} = T
 @inline value(x) = x
 @inline value(d::Dual) = d.value
 
