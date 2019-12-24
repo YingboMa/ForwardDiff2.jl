@@ -209,12 +209,9 @@ end
 # Promotion/Conversion #
 ########################
 
-#T1 < T2  if T1 = Tag{Tag{Nothing}} but T2 = Tag{Tag{Tag{Nothing}}}
-
-Base.@pure function Base.promote_rule(::Type{Dual{T1,V1,P1}},
-                                      ::Type{Dual{T2,V2,P2}}) where {T1,V1,P1,T2,V2,P2}
+function Base.promote_rule(::Type{Dual{T1,V1,P1}},
+                           ::Type{Dual{T2,V2,P2}}) where {T1,V1,P1,T2,V2,P2}
     # V1 and V2 might themselves be Dual types
-
     if T2 ≺ T1
         Dual{T1,promote_type(V1,Dual{T2,V2,P2}),P1}
     else
