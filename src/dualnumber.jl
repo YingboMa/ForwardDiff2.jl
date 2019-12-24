@@ -1,4 +1,3 @@
-using StaticArrays
 using Random
 
 #=
@@ -102,8 +101,6 @@ end
 dualtag() = nothing
 
 @inline Dual{T}(value::V, partials::P) where {T,V,P} = Dual{T,V,P}(value, partials)
-@inline Dual{T}(value) where {T} = Dual{T}(value, @SVector(typeof(value)[]))
-@inline Dual{T}(x::Dual{T}) where {T} = Dual{T}(x, @SVector(typeof(x)[]))
 #@inline Dual{T}(value::V, ::Chunk{N}, p::Val{i}) where {T,V,P,i} = Dual{T}(value, single_seed(Partials{N,V}, p))
 @inline Dual(args...) = Dual{typeof(dualtag())}(args...)
 
@@ -120,7 +117,6 @@ dualtag() = nothing
 @inline value(x) = x
 @inline value(d::Dual) = d.value
 
-@inline partials(x) = @SVector(typeof(x)[])
 @inline partials(d::Dual) = d.partials
 @inline Base.@propagate_inbounds partials(d::Dual, i) = d.partials[i]
 @inline Base.@propagate_inbounds partials(d::Dual, i, j) = partials(d, i).partials[j]

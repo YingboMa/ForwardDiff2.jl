@@ -24,7 +24,8 @@ end
 @inline _value(::Tag{T}, d::Dual{Tag{T}}) where T = value(d)
 
 
-@inline _partials(::Any, x, i...) = partials(x, i...)
+@inline _partials(::Any, x, i...) = Zero()
+@inline _partials(::Dual, x, i...) = partials(x, i...)
 @inline _partials(::Tag{T}, d::Dual{Tag{T}}, i...) where T = partials(d, i...)
 @inline _partials(::Tag{T}, x::Dual{S}, i...) where {T,S} = Zero()
 
