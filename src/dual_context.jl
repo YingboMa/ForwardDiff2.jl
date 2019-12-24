@@ -86,7 +86,7 @@ end
 # this makes `log` work by making throw_complex_domainerror inferable, but not really sure why
 @inline isinteresting(ctx::TaggedCtx, f::typeof(Core.throw), xs) = true
 # add `DualContext` here to avoid ambiguity
-@inline alternative(ctx::Union{DualContext,TaggedCtx}, f::typeof(Core.throw), arg) = throw(arg)
+@noinline alternative(ctx::Union{DualContext,TaggedCtx}, f::typeof(Core.throw), arg) = throw(arg)
 
 # actually interesting:
 
