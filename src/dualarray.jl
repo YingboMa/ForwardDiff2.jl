@@ -15,16 +15,17 @@ function Base.print_array(io::IO, da::DualArray)
     _dispsize((w, h),) = (w, div(max(h-npartials(da)-1,0), (npartials(da) + 1)))
     sz = :displaysize => _dispsize(get(io, :displaysize, displaysize(io)))
 
-    Base.printstyled(io, "Primals:\n", bold=true, color=:light_cyan)
+    Base.printstyled(io, "Primals:\n", bold=false, color=2)
     prev_params = io isa IOContext ? io.dict : ()
     ioc = IOContext(io, prev_params..., sz)
     Base.print_array(ioc, value(da))
     Base.println(io)
     for i=1:npartials(da)
-        Base.printstyled(io,"Partials($i):\n", bold=true, color=:light_blue)
+        Base.printstyled(io,"Partials($i):\n", bold=false, color=3)
         Base.print_array(ioc, partials.(da, i))
         i !== npartials(da) && Base.println(io)
     end
+    return nothing
 end
 
 DualArray(a::AbstractArray) = DualArray{Nothing,size(a, ndims(a))-1}(a)

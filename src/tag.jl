@@ -1,8 +1,8 @@
 struct Tag{Parent} end
 
-@inline _find_dual(ctx::T, l, i) where {T} = 0
-@inline _find_dual(ctx::T, l, i, x::Dual{T}, xs...) where {T} = i
-@inline _find_dual(ctx::T, l, i, x, xs...) where {T} = _find_dual(ctx, l, i+1, xs...)
+@inline _find_dual(tag::T, l, i) where {T} = 0
+@inline _find_dual(tag::T, l, i, x::Dual{T}, xs...) where {T} = i
+@inline _find_dual(tag::T, l, i, x, xs...) where {T} = _find_dual(tag, l, i+1, xs...)
 
 @inline innertagtype(::Tag{Tag{T}}) where T = Tag{T}()
 @inline innertagtype(::Tag{T}) where T = nothing
