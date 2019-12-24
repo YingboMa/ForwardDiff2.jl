@@ -246,8 +246,8 @@ Base.convert(::Type{Dual{T,V,P}}, x) where {T,V,P} = Dual{T}(convert(V, x), zero
 Base.convert(::Type{Dual{T,V,P}}, x::Number) where {T,V,P} = Dual{T}(convert(V, x), zero(P))
 Base.convert(::Type{D}, d::D) where {D<:Dual} = d
 
-Base.float(d::Dual{T,V,P}) where {T,V,P} = convert(Dual{T,promote_type(V, Float16),P}, d)
-Base.AbstractFloat(d::Dual{T,V,P}) where {T,V,P} = convert(Dual{T,promote_type(V, Float16),P}, d)
+Base.float(d::Dual{T}) where {T} = Dual{T}(value(d), map(float, partials(d)))
+Base.AbstractFloat(d::Dual{T}) where {T} = Dual{T}(convert(AbstractFloat, value(d)), map(x->convert(AbstractFloat, x), partials(d)))
 
 ###################################
 # General Mathematical Operations #
