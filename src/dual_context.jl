@@ -28,13 +28,14 @@ end
 @inline _partials(::Tag{T}, d::Dual{Tag{T}}, i...) where T = partials(d, i...)
 @inline _partials(::Tag{T}, x::Dual{S}, i...) where {T,S} = Zero()
 
-
+#=
 function Wirtinger(primal::Partials, conjugate::Union{Number,ChainRulesCore.AbstractDifferential})
     return Partials(map(p->Wirtinger(p, conjugate), primal.values))
 end
 function Wirtinger(primal::Partials, conjugate::Partials)
     return Partials(map((p, c)->Wirtinger(p, c), primal.values, conjugate.values))
 end
+=#
 @inline _values(S, xs) = map(x->_value(S, x), xs)
 @inline _partialss(S, xs) = map(x->_partials(S, x), xs)
 
