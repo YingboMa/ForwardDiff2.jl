@@ -11,6 +11,7 @@ using Cassette
 
 using NaNMath, SpecialFunctions
 using DiffRules
+using Calculus
 
 using ForwardDiff2
 
@@ -29,8 +30,6 @@ end
 macro dtest_broken(expr)
     :(@test_broken dualrun(()->$(esc(expr))))
 end
-
-import Calculus
 
 const Partials{N,V} = SArray{Tuple{N},V,1,N}
 
