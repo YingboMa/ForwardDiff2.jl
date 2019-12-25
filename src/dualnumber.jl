@@ -13,7 +13,7 @@ Dual(1, [1]) --> Dual(1, Partials([1,])) # fail Any
 Dual(::Number1, [1]) --> Dual(1, Partials([1,])) # fail Any
 =#
 
-# Copied from `ForwardDiff.jl`
+# Modified from `ForwardDiff.jl`
 
 ###########
 # Prelude #
