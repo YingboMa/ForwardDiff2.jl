@@ -1,5 +1,10 @@
 struct Tag{Parent} end
 
+@inline ≺(::Any, ::Tag) = true
+@inline ≺(::Tag, ::Any) = false
+@inline ≺(::Any, ::Any) = false
+@inline ≺(t::Tag, s::Tag) = innertagtype(t) ≺ innertagtype(s)
+
 @inline _find_dual(tag::T, l, i) where {T} = 0
 @inline _find_dual(tag::T, l, i, x::Dual{T}, xs...) where {T} = i
 @inline _find_dual(tag::T, l, i, x, xs...) where {T} = _find_dual(tag, l, i+1, xs...)
