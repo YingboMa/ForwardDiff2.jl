@@ -57,23 +57,23 @@ for N in (0,3), M in (0,4), V in (Int, Float32)
     println("  ...testing Dual{..,$V,$N} and Dual{..,Dual{..,$V,$M},$N}")
 
 
-    PARTIALS = Partials{N,V}(ntuple(n -> intrand(V), N))
-    PRIMAL = intrand(V)
-    FDNUM = dual1(PRIMAL, PARTIALS)
+    global PARTIALS = Partials{N,V}(ntuple(n -> intrand(V), N))
+    global PRIMAL = intrand(V)
+    global FDNUM = dual1(PRIMAL, PARTIALS)
 
-    PARTIALS2 = Partials{N,V}(ntuple(n -> intrand(V), N))
-    PRIMAL2 = intrand(V)
-    FDNUM2 = dual1(PRIMAL2, PARTIALS2)
+    global PARTIALS2 = Partials{N,V}(ntuple(n -> intrand(V), N))
+    global PRIMAL2 = intrand(V)
+    global FDNUM2 = dual1(PRIMAL2, PARTIALS2)
 
-    PARTIALS3 = Partials{N,V}(ntuple(n -> intrand(V), N))
-    PRIMAL3 = intrand(V)
-    FDNUM3 = dual1(PRIMAL3, PARTIALS3)
+    global PARTIALS3 = Partials{N,V}(ntuple(n -> intrand(V), N))
+    global PRIMAL3 = intrand(V)
+    global FDNUM3 = dual1(PRIMAL3, PARTIALS3)
 
-    M_PARTIALS = Partials{M,V}(ntuple(m -> intrand(V), M))
-    NESTED_FDNUM = dual2(dual1(PRIMAL, M_PARTIALS), PARTIALS)
+    global M_PARTIALS = Partials{M,V}(ntuple(m -> intrand(V), M))
+    global NESTED_FDNUM = dual2(dual1(PRIMAL, M_PARTIALS), PARTIALS)
 
-    M_PARTIALS2 = Partials{M,V}(ntuple(m -> intrand(V), M))
-    NESTED_FDNUM2 = dual2(dual1(PRIMAL2, M_PARTIALS2), PARTIALS2)
+    global M_PARTIALS2 = Partials{M,V}(ntuple(m -> intrand(V), M))
+    global NESTED_FDNUM2 = dual2(dual1(PRIMAL2, M_PARTIALS2), PARTIALS2)
 
     ################
     # Constructors #
@@ -100,7 +100,6 @@ for N in (0,3), M in (0,4), V in (Int, Float32)
     @test partials(FDNUM) == PARTIALS
     @test partials(NESTED_FDNUM) === PARTIALS
 
-            global NESTED_FDNUM
     for i in 1:N
         @test partials(FDNUM, i) == PARTIALS[i]
         for j in 1:M

@@ -58,15 +58,13 @@ end
         vals, pushfwd = res
         ps = _partialss(tag, args)
 
-        if !(pushfwd isa Tuple)
-            # a single function (scalar output)
-            d = overdub(ctx, pushfwd, Zero(), ps...)
-            return Dual{T}(vals, d)
-        else
-            # many partial functions (as many as outputs)
-            return map(vals, pushfwd) do val, ∂
-                Dual{T}(val, overdub(ctx, ∂, Zero(), ps...))
+        ∂s = overdub(ctx, pushfwd, Zero(), ps...)
+        return if ∂s isa Tuple
+            map(vals, ∂s) do val, ∂
+                Dual{T}(val, ∂)
             end
+        else
+            Dual{T}(vals, ∂s)
         end
     end
 end
