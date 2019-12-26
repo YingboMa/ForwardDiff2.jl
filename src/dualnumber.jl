@@ -100,7 +100,11 @@ end
 # intercept calls to dualtag
 dualtag() = nothing
 
-@inline Dual{T}(value::V, partials::P) where {T,V,P} = Dual{T,V,P}(value, partials)
+@inline function Dual{T}(value::V, partials::P) where {T,V,P}
+    Q = promote_type(bottomvaluetype(V), eltype(P))
+    partials′ = convert.(Q, partials)
+    Dual{T,V,typeof(partials′)}(value, partials′)
+end
 #@inline Dual{T}(value::V, ::Chunk{N}, p::Val{i}) where {T,V,P,i} = Dual{T}(value, single_seed(Partials{N,V}, p))
 @inline Dual(value, partials) = Dual{typeof(dualtag())}(value, partials)
 
