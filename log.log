@@ -1,0 +1,504 @@
+Any[CodeInfo(
+    @ /home/shashi/.julia/dev/ChainRulesCore/src/rule_definition_tools.jl:178 within `frule'
+1 ─ %1 = Core.getfield(##overdub_arguments#403, 3)::Dual{Tag{Nothing},Int64,Int64}
+│   %2 = Core.getfield(##overdub_arguments#403, 4)::Dual{Tag{Nothing},Int64,Int64}
+│        invoke Cassette.overdub(_2::Cassette.Context{nametype(DualContext),Nothing,Nothing,ForwardDiff2.var"##PassType#402",Nothing,Cassette.DisableHooks}, ChainRulesCore.println::typeof(println), "About to get Ω"::String)::Any
+│   @ /home/shashi/.julia/dev/ChainRulesCore/src/rule_definition_tools.jl:179 within `frule'
+│        invoke Cassette.overdub(_2::Cassette.Context{nametype(DualContext),Nothing,Nothing,ForwardDiff2.var"##PassType#402",Nothing,Cassette.DisableHooks}, ChainRules.:+::typeof(+), %1::Dual{Tag{Nothing},Int64,Int64}, %2::Dual{Tag{Nothing},Int64,Int64})::Union{}
+└──      $(Expr(:unreachable))::Union{}
+), CodeInfo(
+     @ coreio.jl:4 within `println'
+1 ──       #self# = Core.getfield(##overdub_arguments#403, 1)
+│    %2  = Core.getfield(##overdub_arguments#403, 2)
+│          xs = Core.tuple(%2)
+│    %4  = (ForwardDiff2.isinteresting)(##overdub_context#402, Core.typeassert, Base.stdout, Base.IO)
+└───       goto #3 if not %4
+2 ── %6  = (ForwardDiff2.alternative)(##overdub_context#402, Core.typeassert, Base.stdout, Base.IO)
+│          ##tmp#801 = %6
+└───       goto #4
+3 ── %9  = Cassette.overdub(##overdub_context#402, Core.typeassert, Base.stdout, Base.IO)
+└───       ##tmp#801 = %9
+4 ┄─ %11 = ##tmp#801
+│    %12 = (ForwardDiff2.isinteresting)(##overdub_context#402, Core.tuple, %11)
+└───       goto #6 if not %12
+5 ── %14 = (ForwardDiff2.alternative)(##overdub_context#402, Core.tuple, %11)
+│          ##tmp#802 = %14
+└───       goto #7
+6 ── %17 = Cassette.overdub(##overdub_context#402, Core.tuple, %11)
+└───       ##tmp#802 = %17
+7 ┄─ %19 = ##tmp#802
+│    %20 = (ForwardDiff2.isinteresting)(##overdub_context#402, Core._apply, Base.println, %19, xs)
+└───       goto #9 if not %20
+8 ── %22 = (ForwardDiff2.alternative)(##overdub_context#402, Core._apply, Base.println, %19, xs)
+│          ##tmp#803 = %22
+└───       goto #10
+9 ── %25 = Core.tuple(##overdub_context#402, Base.println)
+│    %26 = Core._apply(Cassette.overdub, %25, %19, xs)
+└───       ##tmp#803 = %26
+10 ┄ %28 = ##tmp#803
+└───       return %28
+), CodeInfo(
+     @ coreio.jl:4 within `println'
+1 ──       #self# = Core.getfield(##overdub_arguments#403, 1)
+│    %2  = Core.getfield(##overdub_arguments#403, 2)
+│          xs = Core.tuple(%2)
+│    %4  = (ForwardDiff2.isinteresting)(##overdub_context#402, Core.typeassert, Base.stdout, Base.IO)
+└───       goto #3 if not %4
+2 ── %6  = (ForwardDiff2.alternative)(##overdub_context#402, Core.typeassert, Base.stdout, Base.IO)
+│          ##tmp#804 = %6
+└───       goto #4
+3 ── %9  = Cassette.overdub(##overdub_context#402, Core.typeassert, Base.stdout, Base.IO)
+└───       ##tmp#804 = %9
+4 ┄─ %11 = ##tmp#804
+│    %12 = (ForwardDiff2.isinteresting)(##overdub_context#402, Core.tuple, %11)
+└───       goto #6 if not %12
+5 ── %14 = (ForwardDiff2.alternative)(##overdub_context#402, Core.tuple, %11)
+│          ##tmp#805 = %14
+└───       goto #7
+6 ── %17 = Cassette.overdub(##overdub_context#402, Core.tuple, %11)
+└───       ##tmp#805 = %17
+7 ┄─ %19 = ##tmp#805
+│    %20 = (ForwardDiff2.isinteresting)(##overdub_context#402, Core._apply, Base.println, %19, xs)
+└───       goto #9 if not %20
+8 ── %22 = (ForwardDiff2.alternative)(##overdub_context#402, Core._apply, Base.println, %19, xs)
+│          ##tmp#806 = %22
+└───       goto #10
+9 ── %25 = Core.tuple(##overdub_context#402, Base.println)
+│    %26 = Core._apply(Cassette.overdub, %25, %19, xs)
+└───       ##tmp#806 = %26
+10 ┄ %28 = ##tmp#806
+└───       return %28
+), CodeInfo(
+     @ coreio.jl:4 within `println'
+1 ── %1  = Core.getfield(##overdub_arguments#403, 2)::String
+│    %2  = Core.tuple(%1)::Tuple{String}
+│    %3  = Base.stdout::Any
+│    %4  = Base.IO::Type{IO}
+│   ┌ @ /home/shashi/.julia/dev/ForwardDiff2/src/dual_context.jl:64 within `isinteresting'
+│   │ %5  = ForwardDiff2.anydual(%3, %4)::Bool
+│   └
+└───       goto #3 if not %5
+2 ── %7  = (ForwardDiff2.alternative)(##overdub_context#402, Core.typeassert, Base.stdout, Base.IO)::Any
+└───       goto #4
+3 ── %9  = Cassette.overdub(##overdub_context#402, Core.typeassert, Base.stdout, Base.IO)::Any
+4 ┄─ %10 = φ (#2 => %7, #3 => %9)::Any
+│   ┌ @ /home/shashi/.julia/dev/ForwardDiff2/src/dual_context.jl:63 within `isinteresting'
+│   │ %11 = ForwardDiff2.anydual(%10)::Bool
+│   └
+└───       goto #6 if not %11
+5 ── %13 = (ForwardDiff2.alternative)(##overdub_context#402, Core.tuple, %10)::Any
+└───       goto #7
+6 ── %15 = Cassette.overdub(##overdub_context#402, Core.tuple, %10)::Any
+7 ┄─ %16 = φ (#5 => %13, #6 => %15)::Any
+│   ┌ @ /home/shashi/.julia/dev/ForwardDiff2/src/dual_context.jl:51 within `isinteresting'
+│   │ %17 = Core._apply::typeof(Core._apply)
+│   │ %18 = (%17)(ForwardDiff2.isinteresting, (Cassette.Context{nametype(DualContext),Nothing,Nothing,ForwardDiff2.var"##PassType#402",Nothing,Cassette.DisableHooks}(nametype(DualContext)(), nothing, nothing, ForwardDiff2.var"##PassType#402"(), nothing, Cassette.DisableHooks()), println), %16, %2)::Any
+│   └
+└───       goto #9 if not %18
+    ┌ @ /home/shashi/.julia/dev/ForwardDiff2/src/dual_context.jl:53 within `alternative'
+8 ──│ %20 = Core._apply::typeof(Core._apply)
+│   │ %21 = (%20)(ForwardDiff2.alternative, (Cassette.Context{nametype(DualContext),Nothing,Nothing,ForwardDiff2.var"##PassType#402",Nothing,Cassette.DisableHooks}(nametype(DualContext)(), nothing, nothing, ForwardDiff2.var"##PassType#402"(), nothing, Cassette.DisableHooks()), println), %16, %2)::Any
+│   └
+└───       goto #10
+9 ── %23 = Core._apply(Cassette.overdub, (Cassette.Context{nametype(DualContext),Nothing,Nothing,ForwardDiff2.var"##PassType#402",Nothing,Cassette.DisableHooks}(nametype(DualContext)(), nothing, nothing, ForwardDiff2.var"##PassType#402"(), nothing, Cassette.DisableHooks()), println), %16, %2)::Any
+10 ┄ %24 = φ (#8 => %21, #9 => %23)::Any
+└───       return %24
+), CodeInfo(
+    @ promotion.jl:387 within `+'
+1 ─       #self# = Core.getfield(##overdub_arguments#403, 1)
+│         x = Core.getfield(##overdub_arguments#403, 2)
+│         y = Core.getfield(##overdub_arguments#403, 3)
+│   %4  = (ForwardDiff2.isinteresting)(##overdub_context#402, Base.no_op_err, "+", $(QuoteNode(Dual{Tag{Nothing},Int64,Int64})))
+└──       goto #3 if not %4
+2 ─ %6  = (ForwardDiff2.alternative)(##overdub_context#402, Base.no_op_err, "+", $(QuoteNode(Dual{Tag{Nothing},Int64,Int64})))
+│         ##tmp#810 = %6
+└──       goto #4
+3 ─ %9  = Cassette.overdub(##overdub_context#402, Base.no_op_err, "+", $(QuoteNode(Dual{Tag{Nothing},Int64,Int64})))
+└──       ##tmp#810 = %9
+4 ┄ %11 = ##tmp#810
+└──       return %11
+), CodeInfo(
+1 ─     nothing::Nothing
+│   @ promotion.jl:387 within `+'
+│       invoke Cassette.overdub(_2::Cassette.Context{nametype(DualContext),Nothing,Nothing,ForwardDiff2.var"##PassType#402",Nothing,Cassette.DisableHooks}, Base.no_op_err::typeof(Base.no_op_err), "+"::String, $(QuoteNode(Dual{Tag{Nothing},Int64,Int64}))::Type{Dual{Tag{Nothing},Int64,Int64}})::Union{}
+└──     $(Expr(:unreachable))::Union{}
+), CodeInfo(
+    @ promotion.jl:386 within `no_op_err'
+1 ─       #self# = Core.getfield(##overdub_arguments#403, 1)
+│         name = Core.getfield(##overdub_arguments#403, 2)
+│         T = Core.getfield(##overdub_arguments#403, 3)
+│   %4  = (ForwardDiff2.isinteresting)(##overdub_context#402, Base.error, name, " not defined for ", T)
+└──       goto #3 if not %4
+2 ─ %6  = (ForwardDiff2.alternative)(##overdub_context#402, Base.error, name, " not defined for ", T)
+│         ##tmp#812 = %6
+└──       goto #4
+3 ─ %9  = Cassette.overdub(##overdub_context#402, Base.error, name, " not defined for ", T)
+└──       ##tmp#812 = %9
+4 ┄ %11 = ##tmp#812
+└──       return %11
+), CodeInfo(
+    @ promotion.jl:386 within `no_op_err'
+1 ─       #self# = Core.getfield(##overdub_arguments#403, 1)
+│         name = Core.getfield(##overdub_arguments#403, 2)
+│         T = Core.getfield(##overdub_arguments#403, 3)
+│   %4  = (ForwardDiff2.isinteresting)(##overdub_context#402, Base.error, name, " not defined for ", T)
+└──       goto #3 if not %4
+2 ─ %6  = (ForwardDiff2.alternative)(##overdub_context#402, Base.error, name, " not defined for ", T)
+│         ##tmp#813 = %6
+└──       goto #4
+3 ─ %9  = Cassette.overdub(##overdub_context#402, Base.error, name, " not defined for ", T)
+└──       ##tmp#813 = %9
+4 ┄ %11 = ##tmp#813
+└──       return %11
+), CodeInfo(
+    @ promotion.jl:386 within `no_op_err'
+1 ─ %1 = Core.getfield(##overdub_arguments#403, 2)::String
+│        invoke Cassette.overdub(_2::Cassette.Context{nametype(DualContext),Nothing,Nothing,ForwardDiff2.var"##PassType#402",Nothing,Cassette.DisableHooks}, Base.error::typeof(error), %1::String, " not defined for "::String, Dual{Tag{Nothing},Int64,Int64}::Type{Dual{Tag{Nothing},Int64,Int64}})::Union{}
+└──      $(Expr(:unreachable))::Union{}
+), CodeInfo(
+     @ error.jl:41 within `error'
+1 ──       #self# = Core.getfield(##overdub_arguments#403, 1)
+│    %2  = Core.getfield(##overdub_arguments#403, 2)
+│    %3  = Core.getfield(##overdub_arguments#403, 3)
+│    %4  = Core.getfield(##overdub_arguments#403, 4)
+│          s = Core.tuple(%2, %3, %4)
+│          $(Expr(:meta, :noinline))
+│    @ error.jl:42 within `error'
+│    %7  = (ForwardDiff2.isinteresting)(##overdub_context#402, Base.getproperty, Base.Main, :Base)
+└───       goto #3 if not %7
+2 ── %9  = (ForwardDiff2.alternative)(##overdub_context#402, Base.getproperty, Base.Main, :Base)
+│          ##tmp#815 = %9
+└───       goto #4
+3 ── %12 = Cassette.overdub(##overdub_context#402, Base.getproperty, Base.Main, :Base)
+└───       ##tmp#815 = %12
+4 ┄─ %14 = ##tmp#815
+│    %15 = (ForwardDiff2.isinteresting)(##overdub_context#402, Base.getproperty, %14, :string)
+└───       goto #6 if not %15
+5 ── %17 = (ForwardDiff2.alternative)(##overdub_context#402, Base.getproperty, %14, :string)
+│          ##tmp#816 = %17
+└───       goto #7
+6 ── %20 = Cassette.overdub(##overdub_context#402, Base.getproperty, %14, :string)
+└───       ##tmp#816 = %20
+7 ┄─ %22 = ##tmp#816
+│    %23 = (ForwardDiff2.isinteresting)(##overdub_context#402, Core._apply, %22, s)
+└───       goto #9 if not %23
+8 ── %25 = (ForwardDiff2.alternative)(##overdub_context#402, Core._apply, %22, s)
+│          ##tmp#817 = %25
+└───       goto #10
+9 ── %28 = Core.tuple(##overdub_context#402, %22)
+│    %29 = Core._apply(Cassette.overdub, %28, s)
+└───       ##tmp#817 = %29
+10 ┄ %31 = ##tmp#817
+│    %32 = (ForwardDiff2.isinteresting)(##overdub_context#402, Base.ErrorException, %31)
+└───       goto #12 if not %32
+11 ─ %34 = (ForwardDiff2.alternative)(##overdub_context#402, Base.ErrorException, %31)
+│          ##tmp#818 = %34
+└───       goto #13
+12 ─ %37 = Cassette.overdub(##overdub_context#402, Base.ErrorException, %31)
+└───       ##tmp#818 = %37
+13 ┄ %39 = ##tmp#818
+│    %40 = (ForwardDiff2.isinteresting)(##overdub_context#402, Base.throw, %39)
+└───       goto #15 if not %40
+14 ─ %42 = (ForwardDiff2.alternative)(##overdub_context#402, Base.throw, %39)
+│          ##tmp#819 = %42
+└───       goto #16
+15 ─ %45 = Cassette.overdub(##overdub_context#402, Base.throw, %39)
+└───       ##tmp#819 = %45
+16 ┄ %47 = ##tmp#819
+└───       return %47
+), CodeInfo(
+     @ error.jl:41 within `error'
+1 ── %1  = Core.getfield(##overdub_arguments#403, 2)::String
+│    %2  = Core.getfield(##overdub_arguments#403, 3)::String
+│    @ error.jl:42 within `error'
+│    %3  = Base.Main::Any
+│   ┌ @ /home/shashi/.julia/dev/ForwardDiff2/src/dual_context.jl:64 within `isinteresting'
+│   │ %4  = ForwardDiff2.anydual(%3, :Base)::Bool
+│   └
+└───       goto #3 if not %4
+2 ── %6  = (ForwardDiff2.alternative)(##overdub_context#402, Base.getproperty, Base.Main, :Base)::Any
+└───       goto #4
+3 ── %8  = Base.Main::Any
+│   ┌ @ /home/shashi/.julia/dev/Cassette/src/context.jl:271 within `overdub'
+│   │┌ @ /home/shashi/.julia/dev/Cassette/src/context.jl:445 within `fallback'
+│   ││┌ @ /home/shashi/.julia/dev/Cassette/src/context.jl:447 within `call'
+└───│││ %9  = (getproperty)(%8, :Base)::Any
+    └└└
+4 ┄─ %10 = φ (#2 => %6, #3 => %9)::Any
+│   ┌ @ /home/shashi/.julia/dev/ForwardDiff2/src/dual_context.jl:64 within `isinteresting'
+│   │ %11 = ForwardDiff2.anydual(%10, :string)::Bool
+│   └
+└───       goto #6 if not %11
+5 ── %13 = (ForwardDiff2.alternative)(##overdub_context#402, Base.getproperty, %10, :string)::Any
+└───       goto #7
+    ┌ @ /home/shashi/.julia/dev/Cassette/src/context.jl:271 within `overdub'
+    │┌ @ /home/shashi/.julia/dev/Cassette/src/context.jl:445 within `fallback'
+    ││┌ @ /home/shashi/.julia/dev/Cassette/src/context.jl:447 within `call'
+6 ──│││ %15 = (getproperty)(%10, :string)::Any
+    └└└
+7 ┄─ %16 = φ (#5 => %13, #6 => %15)::Any
+│   ┌ @ /home/shashi/.julia/dev/ForwardDiff2/src/dual_context.jl:51 within `isinteresting'
+│   │       (ForwardDiff2.isinteresting)($(QuoteNode(Cassette.Context{nametype(DualContext),Nothing,Nothing,ForwardDiff2.var"##PassType#402",Nothing,Cassette.DisableHooks}(nametype(DualContext)(), nothing, nothing, ForwardDiff2.var"##PassType#402"(), nothing, Cassette.DisableHooks()))), %16, %1, %2, Dual{Tag{Nothing},Int64,Int64})::Bool
+│   └
+│    %18 = (isa)(%16, typeof(Core._apply))::Bool
+└───       goto #9 if not %18
+    ┌ @ /home/shashi/.julia/dev/Cassette/src/context.jl:260 within `overdub'
+8 ──│ %20 = Core._apply::typeof(Core._apply)
+│   │ %21 = Core.tuple($(QuoteNode(Cassette.Context{nametype(DualContext),Nothing,Nothing,ForwardDiff2.var"##PassType#402",Nothing,Cassette.DisableHooks}(nametype(DualContext)(), nothing, nothing, ForwardDiff2.var"##PassType#402"(), nothing, Cassette.DisableHooks()))), %1)::Tuple{Cassette.Context{nametype(DualContext),Nothing,Nothing,ForwardDiff2.var"##PassType#402",Nothing,Cassette.DisableHooks},String}
+│   │       (%20)(Cassette.overdub, %21, %2, Dual{Tag{Nothing},Int64,Int64})::Union{}
+│   │       $(Expr(:unreachable))::Union{}
+│   └
+└───       $(Expr(:unreachable))::Union{}
+9 ┄─ %25 = (isa)(%16, typeof(ForwardDiff2.find_dual))::Bool
+└───       goto #11 if not %25
+10 ─       goto #12
+11 ─ %28 = Cassette.overdub($(QuoteNode(Cassette.Context{nametype(DualContext),Nothing,Nothing,ForwardDiff2.var"##PassType#402",Nothing,Cassette.DisableHooks}(nametype(DualContext)(), nothing, nothing, ForwardDiff2.var"##PassType#402"(), nothing, Cassette.DisableHooks()))), %16, %1, %2, Dual{Tag{Nothing},Int64,Int64})::Any
+└───       goto #12
+12 ┄ %30 = φ (#10 => 0, #11 => %28)::Any
+│   ┌ @ /home/shashi/.julia/dev/ForwardDiff2/src/dual_context.jl:63 within `isinteresting'
+│   │ %31 = ForwardDiff2.anydual(%30)::Bool
+│   └
+└───       goto #14 if not %31
+13 ─ %33 = (ForwardDiff2.alternative)(##overdub_context#402, Base.ErrorException, %30)::Any
+└───       goto #15
+14 ─ %35 = Cassette.overdub(##overdub_context#402, Base.ErrorException, %30)::Any
+15 ┄ %36 = φ (#13 => %33, #14 => %35)::Any
+│          (ForwardDiff2.alternative)(##overdub_context#402, Base.throw, %36)::Union{}
+│          $(Expr(:unreachable))::Union{}
+│    @ error.jl:41 within `error'
+└───       $(Expr(:meta, :noinline))
+), CodeInfo(
+    @ /home/shashi/.julia/dev/ChainRulesCore/src/rule_definition_tools.jl:178 within `frule'
+1 ─ %1 = Core.getfield(##overdub_arguments#403, 3)::Dual{Tag{Nothing},Int64,Int64}
+│   %2 = Core.getfield(##overdub_arguments#403, 4)::Dual{Tag{Nothing},Int64,Int64}
+│        invoke Cassette.overdub(_2::Cassette.Context{nametype(DualContext),Nothing,Nothing,ForwardDiff2.var"##PassType#402",Nothing,Cassette.DisableHooks}, ChainRulesCore.println::typeof(println), "About to get Ω"::String)::Any
+│   @ /home/shashi/.julia/dev/ChainRulesCore/src/rule_definition_tools.jl:179 within `frule'
+│        invoke Cassette.overdub(_2::Cassette.Context{nametype(DualContext),Nothing,Nothing,ForwardDiff2.var"##PassType#402",Nothing,Cassette.DisableHooks}, ChainRules.:+::typeof(+), %1::Dual{Tag{Nothing},Int64,Int64}, %2::Dual{Tag{Nothing},Int64,Int64})::Union{}
+└──      $(Expr(:unreachable))::Union{}
+), CodeInfo(
+     @ coreio.jl:4 within `println'
+1 ──       #self# = Core.getfield(##overdub_arguments#403, 1)
+│    %2  = Core.getfield(##overdub_arguments#403, 2)
+│          xs = Core.tuple(%2)
+│    %4  = (ForwardDiff2.isinteresting)(##overdub_context#402, Core.typeassert, Base.stdout, Base.IO)
+└───       goto #3 if not %4
+2 ── %6  = (ForwardDiff2.alternative)(##overdub_context#402, Core.typeassert, Base.stdout, Base.IO)
+│          ##tmp#11756 = %6
+└───       goto #4
+3 ── %9  = Cassette.overdub(##overdub_context#402, Core.typeassert, Base.stdout, Base.IO)
+└───       ##tmp#11756 = %9
+4 ┄─ %11 = ##tmp#11756
+│    %12 = (ForwardDiff2.isinteresting)(##overdub_context#402, Core.tuple, %11)
+└───       goto #6 if not %12
+5 ── %14 = (ForwardDiff2.alternative)(##overdub_context#402, Core.tuple, %11)
+│          ##tmp#11757 = %14
+└───       goto #7
+6 ── %17 = Cassette.overdub(##overdub_context#402, Core.tuple, %11)
+└───       ##tmp#11757 = %17
+7 ┄─ %19 = ##tmp#11757
+│    %20 = (ForwardDiff2.isinteresting)(##overdub_context#402, Core._apply, Base.println, %19, xs)
+└───       goto #9 if not %20
+8 ── %22 = (ForwardDiff2.alternative)(##overdub_context#402, Core._apply, Base.println, %19, xs)
+│          ##tmp#11758 = %22
+└───       goto #10
+9 ── %25 = Core.tuple(##overdub_context#402, Base.println)
+│    %26 = Core._apply(Cassette.overdub, %25, %19, xs)
+└───       ##tmp#11758 = %26
+10 ┄ %28 = ##tmp#11758
+└───       return %28
+), CodeInfo(
+     @ coreio.jl:4 within `println'
+1 ──       #self# = Core.getfield(##overdub_arguments#403, 1)
+│    %2  = Core.getfield(##overdub_arguments#403, 2)
+│          xs = Core.tuple(%2)
+│    %4  = (ForwardDiff2.isinteresting)(##overdub_context#402, Core.typeassert, Base.stdout, Base.IO)
+└───       goto #3 if not %4
+2 ── %6  = (ForwardDiff2.alternative)(##overdub_context#402, Core.typeassert, Base.stdout, Base.IO)
+│          ##tmp#11759 = %6
+└───       goto #4
+3 ── %9  = Cassette.overdub(##overdub_context#402, Core.typeassert, Base.stdout, Base.IO)
+└───       ##tmp#11759 = %9
+4 ┄─ %11 = ##tmp#11759
+│    %12 = (ForwardDiff2.isinteresting)(##overdub_context#402, Core.tuple, %11)
+└───       goto #6 if not %12
+5 ── %14 = (ForwardDiff2.alternative)(##overdub_context#402, Core.tuple, %11)
+│          ##tmp#11760 = %14
+└───       goto #7
+6 ── %17 = Cassette.overdub(##overdub_context#402, Core.tuple, %11)
+└───       ##tmp#11760 = %17
+7 ┄─ %19 = ##tmp#11760
+│    %20 = (ForwardDiff2.isinteresting)(##overdub_context#402, Core._apply, Base.println, %19, xs)
+└───       goto #9 if not %20
+8 ── %22 = (ForwardDiff2.alternative)(##overdub_context#402, Core._apply, Base.println, %19, xs)
+│          ##tmp#11761 = %22
+└───       goto #10
+9 ── %25 = Core.tuple(##overdub_context#402, Base.println)
+│    %26 = Core._apply(Cassette.overdub, %25, %19, xs)
+└───       ##tmp#11761 = %26
+10 ┄ %28 = ##tmp#11761
+└───       return %28
+), CodeInfo(
+    @ promotion.jl:387 within `+'
+1 ─       #self# = Core.getfield(##overdub_arguments#403, 1)
+│         x = Core.getfield(##overdub_arguments#403, 2)
+│         y = Core.getfield(##overdub_arguments#403, 3)
+│   %4  = (ForwardDiff2.isinteresting)(##overdub_context#402, Base.no_op_err, "+", $(QuoteNode(Dual{Tag{Nothing},Int64,Int64})))
+└──       goto #3 if not %4
+2 ─ %6  = (ForwardDiff2.alternative)(##overdub_context#402, Base.no_op_err, "+", $(QuoteNode(Dual{Tag{Nothing},Int64,Int64})))
+│         ##tmp#11762 = %6
+└──       goto #4
+3 ─ %9  = Cassette.overdub(##overdub_context#402, Base.no_op_err, "+", $(QuoteNode(Dual{Tag{Nothing},Int64,Int64})))
+└──       ##tmp#11762 = %9
+4 ┄ %11 = ##tmp#11762
+└──       return %11
+), CodeInfo(
+1 ─     nothing::Nothing
+│   @ promotion.jl:387 within `+'
+│       invoke Cassette.overdub(_2::Cassette.Context{nametype(DualContext),Nothing,Nothing,ForwardDiff2.var"##PassType#402",Nothing,Cassette.DisableHooks}, Base.no_op_err::typeof(Base.no_op_err), "+"::String, $(QuoteNode(Dual{Tag{Nothing},Int64,Int64}))::Type{Dual{Tag{Nothing},Int64,Int64}})::Union{}
+└──     $(Expr(:unreachable))::Union{}
+), CodeInfo(
+    @ promotion.jl:386 within `no_op_err'
+1 ─       #self# = Core.getfield(##overdub_arguments#403, 1)
+│         name = Core.getfield(##overdub_arguments#403, 2)
+│         T = Core.getfield(##overdub_arguments#403, 3)
+│   %4  = (ForwardDiff2.isinteresting)(##overdub_context#402, Base.error, name, " not defined for ", T)
+└──       goto #3 if not %4
+2 ─ %6  = (ForwardDiff2.alternative)(##overdub_context#402, Base.error, name, " not defined for ", T)
+│         ##tmp#11764 = %6
+└──       goto #4
+3 ─ %9  = Cassette.overdub(##overdub_context#402, Base.error, name, " not defined for ", T)
+└──       ##tmp#11764 = %9
+4 ┄ %11 = ##tmp#11764
+└──       return %11
+), CodeInfo(
+    @ promotion.jl:386 within `no_op_err'
+1 ─       #self# = Core.getfield(##overdub_arguments#403, 1)
+│         name = Core.getfield(##overdub_arguments#403, 2)
+│         T = Core.getfield(##overdub_arguments#403, 3)
+│   %4  = (ForwardDiff2.isinteresting)(##overdub_context#402, Base.error, name, " not defined for ", T)
+└──       goto #3 if not %4
+2 ─ %6  = (ForwardDiff2.alternative)(##overdub_context#402, Base.error, name, " not defined for ", T)
+│         ##tmp#11765 = %6
+└──       goto #4
+3 ─ %9  = Cassette.overdub(##overdub_context#402, Base.error, name, " not defined for ", T)
+└──       ##tmp#11765 = %9
+4 ┄ %11 = ##tmp#11765
+└──       return %11
+), CodeInfo(
+    @ promotion.jl:386 within `no_op_err'
+1 ─ %1 = Core.getfield(##overdub_arguments#403, 2)::String
+│        invoke Cassette.overdub(_2::Cassette.Context{nametype(DualContext),Nothing,Nothing,ForwardDiff2.var"##PassType#402",Nothing,Cassette.DisableHooks}, Base.error::typeof(error), %1::String, " not defined for "::String, Dual{Tag{Nothing},Int64,Int64}::Type{Dual{Tag{Nothing},Int64,Int64}})::Union{}
+└──      $(Expr(:unreachable))::Union{}
+), CodeInfo(
+     @ error.jl:41 within `error'
+1 ──       #self# = Core.getfield(##overdub_arguments#403, 1)
+│    %2  = Core.getfield(##overdub_arguments#403, 2)
+│    %3  = Core.getfield(##overdub_arguments#403, 3)
+│    %4  = Core.getfield(##overdub_arguments#403, 4)
+│          s = Core.tuple(%2, %3, %4)
+│          $(Expr(:meta, :noinline))
+│    @ error.jl:42 within `error'
+│    %7  = (ForwardDiff2.isinteresting)(##overdub_context#402, Base.getproperty, Base.Main, :Base)
+└───       goto #3 if not %7
+2 ── %9  = (ForwardDiff2.alternative)(##overdub_context#402, Base.getproperty, Base.Main, :Base)
+│          ##tmp#11767 = %9
+└───       goto #4
+3 ── %12 = Cassette.overdub(##overdub_context#402, Base.getproperty, Base.Main, :Base)
+└───       ##tmp#11767 = %12
+4 ┄─ %14 = ##tmp#11767
+│    %15 = (ForwardDiff2.isinteresting)(##overdub_context#402, Base.getproperty, %14, :string)
+└───       goto #6 if not %15
+5 ── %17 = (ForwardDiff2.alternative)(##overdub_context#402, Base.getproperty, %14, :string)
+│          ##tmp#11768 = %17
+└───       goto #7
+6 ── %20 = Cassette.overdub(##overdub_context#402, Base.getproperty, %14, :string)
+└───       ##tmp#11768 = %20
+7 ┄─ %22 = ##tmp#11768
+│    %23 = (ForwardDiff2.isinteresting)(##overdub_context#402, Core._apply, %22, s)
+└───       goto #9 if not %23
+8 ── %25 = (ForwardDiff2.alternative)(##overdub_context#402, Core._apply, %22, s)
+│          ##tmp#11769 = %25
+└───       goto #10
+9 ── %28 = Core.tuple(##overdub_context#402, %22)
+│    %29 = Core._apply(Cassette.overdub, %28, s)
+└───       ##tmp#11769 = %29
+10 ┄ %31 = ##tmp#11769
+│    %32 = (ForwardDiff2.isinteresting)(##overdub_context#402, Base.ErrorException, %31)
+└───       goto #12 if not %32
+11 ─ %34 = (ForwardDiff2.alternative)(##overdub_context#402, Base.ErrorException, %31)
+│          ##tmp#11770 = %34
+└───       goto #13
+12 ─ %37 = Cassette.overdub(##overdub_context#402, Base.ErrorException, %31)
+└───       ##tmp#11770 = %37
+13 ┄ %39 = ##tmp#11770
+│    %40 = (ForwardDiff2.isinteresting)(##overdub_context#402, Base.throw, %39)
+└───       goto #15 if not %40
+14 ─ %42 = (ForwardDiff2.alternative)(##overdub_context#402, Base.throw, %39)
+│          ##tmp#11771 = %42
+└───       goto #16
+15 ─ %45 = Cassette.overdub(##overdub_context#402, Base.throw, %39)
+└───       ##tmp#11771 = %45
+16 ┄ %47 = ##tmp#11771
+└───       return %47
+), CodeInfo(
+     @ error.jl:41 within `error'
+1 ── %1  = Core.getfield(##overdub_arguments#403, 2)::String
+│    %2  = Core.getfield(##overdub_arguments#403, 3)::String
+│    @ error.jl:42 within `error'
+│    %3  = Base.Main::Any
+│   ┌ @ /home/shashi/.julia/dev/ForwardDiff2/src/dual_context.jl:64 within `isinteresting'
+│   │ %4  = ForwardDiff2.anydual(%3, :Base)::Bool
+│   └
+└───       goto #3 if not %4
+2 ── %6  = (ForwardDiff2.alternative)(##overdub_context#402, Base.getproperty, Base.Main, :Base)::Any
+└───       goto #4
+3 ── %8  = Base.Main::Any
+│   ┌ @ /home/shashi/.julia/dev/Cassette/src/context.jl:271 within `overdub'
+│   │┌ @ /home/shashi/.julia/dev/Cassette/src/context.jl:445 within `fallback'
+│   ││┌ @ /home/shashi/.julia/dev/Cassette/src/context.jl:447 within `call'
+└───│││ %9  = (getproperty)(%8, :Base)::Any
+    └└└
+4 ┄─ %10 = φ (#2 => %6, #3 => %9)::Any
+│   ┌ @ /home/shashi/.julia/dev/ForwardDiff2/src/dual_context.jl:64 within `isinteresting'
+│   │ %11 = ForwardDiff2.anydual(%10, :string)::Bool
+│   └
+└───       goto #6 if not %11
+5 ── %13 = (ForwardDiff2.alternative)(##overdub_context#402, Base.getproperty, %10, :string)::Any
+└───       goto #7
+    ┌ @ /home/shashi/.julia/dev/Cassette/src/context.jl:271 within `overdub'
+    │┌ @ /home/shashi/.julia/dev/Cassette/src/context.jl:445 within `fallback'
+    ││┌ @ /home/shashi/.julia/dev/Cassette/src/context.jl:447 within `call'
+6 ──│││ %15 = (getproperty)(%10, :string)::Any
+    └└└
+7 ┄─ %16 = φ (#5 => %13, #6 => %15)::Any
+│   ┌ @ /home/shashi/.julia/dev/ForwardDiff2/src/dual_context.jl:51 within `isinteresting'
+│   │       (ForwardDiff2.isinteresting)($(QuoteNode(Cassette.Context{nametype(DualContext),Nothing,Nothing,ForwardDiff2.var"##PassType#402",Nothing,Cassette.DisableHooks}(nametype(DualContext)(), nothing, nothing, ForwardDiff2.var"##PassType#402"(), nothing, Cassette.DisableHooks()))), %16, %1, %2, Dual{Tag{Nothing},Int64,Int64})::Bool
+│   └
+│    %18 = (isa)(%16, typeof(Core._apply))::Bool
+└───       goto #9 if not %18
+    ┌ @ /home/shashi/.julia/dev/Cassette/src/context.jl:260 within `overdub'
+8 ──│ %20 = Core._apply::typeof(Core._apply)
+│   │ %21 = Core.tuple($(QuoteNode(Cassette.Context{nametype(DualContext),Nothing,Nothing,ForwardDiff2.var"##PassType#402",Nothing,Cassette.DisableHooks}(nametype(DualContext)(), nothing, nothing, ForwardDiff2.var"##PassType#402"(), nothing, Cassette.DisableHooks()))), %1)::Tuple{Cassette.Context{nametype(DualContext),Nothing,Nothing,ForwardDiff2.var"##PassType#402",Nothing,Cassette.DisableHooks},String}
+│   │       (%20)(Cassette.overdub, %21, %2, Dual{Tag{Nothing},Int64,Int64})::Union{}
+│   │       $(Expr(:unreachable))::Union{}
+│   └
+└───       $(Expr(:unreachable))::Union{}
+9 ┄─ %25 = (isa)(%16, typeof(ForwardDiff2.find_dual))::Bool
+└───       goto #11 if not %25
+10 ─       goto #12
+11 ─ %28 = Cassette.overdub($(QuoteNode(Cassette.Context{nametype(DualContext),Nothing,Nothing,ForwardDiff2.var"##PassType#402",Nothing,Cassette.DisableHooks}(nametype(DualContext)(), nothing, nothing, ForwardDiff2.var"##PassType#402"(), nothing, Cassette.DisableHooks()))), %16, %1, %2, Dual{Tag{Nothing},Int64,Int64})::Any
+└───       goto #12
+12 ┄ %30 = φ (#10 => 0, #11 => %28)::Any
+│   ┌ @ /home/shashi/.julia/dev/ForwardDiff2/src/dual_context.jl:63 within `isinteresting'
+│   │ %31 = ForwardDiff2.anydual(%30)::Bool
+│   └
+└───       goto #14 if not %31
+13 ─ %33 = (ForwardDiff2.alternative)(##overdub_context#402, Base.ErrorException, %30)::Any
+└───       goto #15
+14 ─ %35 = Cassette.overdub(##overdub_context#402, Base.ErrorException, %30)::Any
+15 ┄ %36 = φ (#13 => %33, #14 => %35)::Any
+│          (ForwardDiff2.alternative)(##overdub_context#402, Base.throw, %36)::Union{}
+│          $(Expr(:unreachable))::Union{}
+│    @ error.jl:41 within `error'
+└───       $(Expr(:meta, :noinline))
+)]
