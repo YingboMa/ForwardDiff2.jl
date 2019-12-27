@@ -206,8 +206,8 @@ end
 for pred in BINARY_PREDICATES
     @eval begin
         Base.$(pred)(x::Dual, y::Dual) = $pred(value(x), value(y))
-        Base.$(pred)(x::Number, y::Dual) = $pred(value(x), value(y))
-        Base.$(pred)(x::Dual, y::Number) = $pred(value(x), value(y))
+        Base.$(pred)(x::Real, y::Dual) = $pred(value(x), value(y))
+        Base.$(pred)(x::Dual, y::Real) = $pred(value(x), value(y))
     end
 end
 
