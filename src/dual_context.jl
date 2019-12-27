@@ -41,38 +41,6 @@ end
 @inline _values(S, xs) = map(x->_value(S, x), xs)
 @inline _partialss(S, xs) = map(x->_partials(S, x), xs)
 
-@inline function _frule_overdub(context::TaggedCtx{S}, f, args...) where {T,S}
-    tag = context.metadata
-    vs = _values(tag, args)
-    ctx = similarcontext(context, metadata=innertagtype(tag))
-    #ctx = context
-    res = alternative(ctx, frule, f, vs...)
-
-    if res === nothing
-        # this means there is no frule (majority of all calls)
-        if f === frule # PSYCH!!
-            # do not do frule of frule!
-            return alternative(ctx, f, vs...)
-        else
-            return Cassette.recurse(ctx, f, args...)
-        end
-    else
-        # this means a result and one or more partial function
-        # was computed
-        vals, pushfwd = res
-        ps = _partialss(tag, args)
-
-        ∂s = overdub(ctx, pushfwd, Zero(), ps...)
-        return if ∂s isa Tuple
-            map(vals, ∂s) do val, ∂
-                Dual{T}(val, ∂)
-            end
-        else
-            Dual{T}(vals, ∂s)
-        end
-    end
-end
-
 @inline anydual(x, xs...) = anydual(xs...)
 @inline anydual(x::Dual, xs...) = true
 @inline anydual() = false
@@ -123,6 +91,7 @@ function _frule_overdub2(ctx::TaggedCtx{T}, f, args...) where T
         # We can't just do f(args...) here because `f` might be
         # a closure which closes over a Dual number, hence we call
         # recurse. Recurse overdubs the calls inside `f` and not `f` itself
+
         return Cassette.recurse(ctx, f, args...)
     else
         # this means there exists an frule for this specific call.
@@ -138,18 +107,22 @@ function _frule_overdub2(ctx::TaggedCtx{T}, f, args...) where T
         # Call the pushforward to get new partials
         # we call it with the older context because the partials
         # might themselves be Duals from older contexts
-        ctx1 = similarcontext(ctx, metadata=innertag(ctx.metadata))
-        ∂s = overdub(ctx1, pushforward, Zero(), ps...)
+        if ctx.metadata isa Tag
+            ctx1 = similarcontext(ctx, metadata=innertag(ctx.metadata))
+            ∂s = overdub(ctx1, pushforward, Zero(), ps...)
+        else
+            ∂s = pushforward(Zero(), ps...)
+        end
 
         # Attach the new partials to the primal result
         # multi-output `f` such as result in the new partials being
         # a tuple, we handle both cases:
         return if ∂s isa Tuple
             map(val, ∂s) do v, ∂
-                Dual{T}(v, ∂)
+                Dual{typeof(tag)}(v, ∂)
             end
         else
-            Dual{T}(val, ∂s)
+            Dual{typeof(tag)}(val, ∂s)
         end
     end
 end
@@ -161,7 +134,9 @@ end
     tag = Tag{T}()
 
     idx = find_dual(tag, args...)
-    if idx === 0
+    if f === Dual
+        return overdub(ctx, f, args...)
+    elseif idx === 0
         # This is the base case for the recursion in this function which
         # tries to do the alternative with successively older contexts
         # the oldest context is not a `Tag`
@@ -172,8 +147,6 @@ end
         # try with the parent context
         ctx1 = similarcontext(ctx, metadata=innertag(ctx.metadata))
         return overdub(ctx1, f, args...)
-    elseif f === Dual
-        overdub(ctx, f, args...)
     else
         # call ChainRules.frule to execute `f` and
         # get a function that computes the partials
