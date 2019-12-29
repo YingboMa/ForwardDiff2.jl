@@ -268,7 +268,7 @@ function tag_show(t, n=0)
     if t isa Nothing
         return subscript_num(n)
     elseif t isa Tag
-        tag_show(innertagtype(t), n+1)
+        tag_show(innertag(t), n+1)
     else
         return "{" * repr(t) * "}" * subscript_num(n)
     end
