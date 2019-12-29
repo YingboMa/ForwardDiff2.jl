@@ -25,8 +25,6 @@ const AMBIGUOUS_TYPES = (AbstractFloat, Irrational, Integer, Rational, Real, Rou
 
 const UNARY_PREDICATES = Symbol[:isinf, :isnan, :isfinite, :iseven, :isodd, :isreal, :isinteger]
 
-const BINARY_PREDICATES = Symbol[:isequal, :isless, :<, :>, :(==), :(!=), :(<=), :(>=)]
-
 const DEFAULT_CHUNK_THRESHOLD = 12
 
 struct Chunk{N} end
@@ -146,7 +144,6 @@ end
 #####################
 # Generic Functions #
 #####################
-# TODO: move those to `dual_context.jl`
 
 Base.copy(d::Dual) = d
 
@@ -202,14 +199,6 @@ isconstant(d::Dual) = iszero(partials(d))
 
 for pred in UNARY_PREDICATES
     @eval Base.$(pred)(d::Dual) = $(pred)(value(d))
-end
-
-for pred in BINARY_PREDICATES
-    @eval begin
-        Base.$(pred)(x::Dual, y::Dual) = $pred(value(x), value(y))
-        Base.$(pred)(x::Real, y::Dual) = $pred(value(x), value(y))
-        Base.$(pred)(x::Dual, y::Real) = $pred(value(x), value(y))
-    end
 end
 
 ########################

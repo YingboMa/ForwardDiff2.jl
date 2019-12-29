@@ -224,55 +224,55 @@ for N in (0,3), M in (0,4), V in (Int, Float32)
     @test ForwardDiff2.isconstant(one(NESTED_FDNUM))
     @test ForwardDiff2.isconstant(NESTED_FDNUM) == (N == 0)
 
-    @test isequal(FDNUM, dual1(PRIMAL, PARTIALS2))
-    @test isequal(PRIMAL, PRIMAL2) == isequal(FDNUM, FDNUM2)
+    @dtest isequal(FDNUM, dual1(PRIMAL, PARTIALS2))
+    @dtest isequal(PRIMAL, PRIMAL2) == isequal(FDNUM, FDNUM2)
 
-    @test isequal(NESTED_FDNUM, dual2(dual1(PRIMAL, M_PARTIALS2), PARTIALS2))
-    @test isequal(PRIMAL, PRIMAL2) == isequal(NESTED_FDNUM, NESTED_FDNUM2)
+    @dtest isequal(NESTED_FDNUM, dual2(dual1(PRIMAL, M_PARTIALS2), PARTIALS2))
+    @dtest isequal(PRIMAL, PRIMAL2) == isequal(NESTED_FDNUM, NESTED_FDNUM2)
 
-    @test FDNUM == dual1(PRIMAL, PARTIALS2)
-    @test (PRIMAL == PRIMAL2) == (FDNUM == FDNUM2)
-    @test (PRIMAL == PRIMAL2) == (NESTED_FDNUM == NESTED_FDNUM2)
+    @dtest FDNUM == dual1(PRIMAL, PARTIALS2)
+    @dtest (PRIMAL == PRIMAL2) == (FDNUM == FDNUM2)
+    @dtest (PRIMAL == PRIMAL2) == (NESTED_FDNUM == NESTED_FDNUM2)
 
-    @test isless(dual1(1, PARTIALS), dual1(2, PARTIALS2))
-    @test !(isless(dual1(1, PARTIALS), dual1(1, PARTIALS2)))
-    @test !(isless(dual1(2, PARTIALS), dual1(1, PARTIALS2)))
+    @dtest isless(dual1(1, PARTIALS), dual1(2, PARTIALS2))
+    @dtest !(isless(dual1(1, PARTIALS), dual1(1, PARTIALS2)))
+    @dtest !(isless(dual1(2, PARTIALS), dual1(1, PARTIALS2)))
 
-    @test isless(dual2(dual1(1, M_PARTIALS), PARTIALS), dual2(dual1(2, M_PARTIALS2), PARTIALS2))
-    @test !(isless(dual2(dual1(1, M_PARTIALS), PARTIALS), dual2(dual1(1, M_PARTIALS2), PARTIALS2)))
-    @test !(isless(dual2(dual1(2, M_PARTIALS), PARTIALS), dual2(dual1(1, M_PARTIALS2), PARTIALS2)))
+    @dtest isless(dual2(dual1(1, M_PARTIALS), PARTIALS), dual2(dual1(2, M_PARTIALS2), PARTIALS2))
+    @dtest !(isless(dual2(dual1(1, M_PARTIALS), PARTIALS), dual2(dual1(1, M_PARTIALS2), PARTIALS2)))
+    @dtest !(isless(dual2(dual1(2, M_PARTIALS), PARTIALS), dual2(dual1(1, M_PARTIALS2), PARTIALS2)))
 
-    @test dual1(1, PARTIALS) < dual1(2, PARTIALS2)
-    @test !(dual1(1, PARTIALS) < dual1(1, PARTIALS2))
-    @test !(dual1(2, PARTIALS) < dual1(1, PARTIALS2))
+    @dtest dual1(1, PARTIALS) < dual1(2, PARTIALS2)
+    @dtest !(dual1(1, PARTIALS) < dual1(1, PARTIALS2))
+    @dtest !(dual1(2, PARTIALS) < dual1(1, PARTIALS2))
 
-    @test dual2(dual1(1, M_PARTIALS), PARTIALS) < dual2(dual1(2, M_PARTIALS2), PARTIALS2)
-    @test !(dual2(dual1(1, M_PARTIALS), PARTIALS) < dual2(dual1(1, M_PARTIALS2), PARTIALS2))
-    @test !(dual1(dual1(2, M_PARTIALS), PARTIALS) < dual2(dual1(1, M_PARTIALS2), PARTIALS2))
+    @dtest dual2(dual1(1, M_PARTIALS), PARTIALS) < dual2(dual1(2, M_PARTIALS2), PARTIALS2)
+    @dtest !(dual2(dual1(1, M_PARTIALS), PARTIALS) < dual2(dual1(1, M_PARTIALS2), PARTIALS2))
+    @dtest !(dual1(dual1(2, M_PARTIALS), PARTIALS) < dual2(dual1(1, M_PARTIALS2), PARTIALS2))
 
-    @test dual1(1, PARTIALS) <= dual1(2, PARTIALS2)
-    @test dual1(1, PARTIALS) <= dual1(1, PARTIALS2)
-    @test !(dual1(2, PARTIALS) <= dual1(1, PARTIALS2))
+    @dtest dual1(1, PARTIALS) <= dual1(2, PARTIALS2)
+    @dtest dual1(1, PARTIALS) <= dual1(1, PARTIALS2)
+    @dtest !(dual1(2, PARTIALS) <= dual1(1, PARTIALS2))
 
-    @test dual2(dual1(1, M_PARTIALS), PARTIALS) <= dual2(dual1(2, M_PARTIALS2), PARTIALS2)
-    @test dual2(dual1(1, M_PARTIALS), PARTIALS) <= dual2(dual1(1, M_PARTIALS2), PARTIALS2)
-    @test !(dual2(dual1(2, M_PARTIALS), PARTIALS) <= dual2(dual1(1, M_PARTIALS2), PARTIALS2))
+    @dtest dual2(dual1(1, M_PARTIALS), PARTIALS) <= dual2(dual1(2, M_PARTIALS2), PARTIALS2)
+    @dtest dual2(dual1(1, M_PARTIALS), PARTIALS) <= dual2(dual1(1, M_PARTIALS2), PARTIALS2)
+    @dtest !(dual2(dual1(2, M_PARTIALS), PARTIALS) <= dual2(dual1(1, M_PARTIALS2), PARTIALS2))
 
-    @test dual1(2, PARTIALS) > dual1(1, PARTIALS2)
-    @test !(dual1(1, PARTIALS) > dual1(1, PARTIALS2))
-    @test !(dual1(1, PARTIALS) > dual1(2, PARTIALS2))
+    @dtest dual1(2, PARTIALS) > dual1(1, PARTIALS2)
+    @dtest !(dual1(1, PARTIALS) > dual1(1, PARTIALS2))
+    @dtest !(dual1(1, PARTIALS) > dual1(2, PARTIALS2))
 
-    @test dual2(dual1(2, M_PARTIALS), PARTIALS) > dual2(dual1(1, M_PARTIALS2), PARTIALS2)
-    @test !(dual2(dual1(1, M_PARTIALS), PARTIALS) > dual2(dual1(1, M_PARTIALS2), PARTIALS2))
-    @test !(dual2(dual1(1, M_PARTIALS), PARTIALS) > dual2(dual1(2, M_PARTIALS2), PARTIALS2))
+    @dtest dual2(dual1(2, M_PARTIALS), PARTIALS) > dual2(dual1(1, M_PARTIALS2), PARTIALS2)
+    @dtest !(dual2(dual1(1, M_PARTIALS), PARTIALS) > dual2(dual1(1, M_PARTIALS2), PARTIALS2))
+    @dtest !(dual2(dual1(1, M_PARTIALS), PARTIALS) > dual2(dual1(2, M_PARTIALS2), PARTIALS2))
 
-    @test dual1(2, PARTIALS) >= dual1(1, PARTIALS2)
-    @test dual1(1, PARTIALS) >= dual1(1, PARTIALS2)
-    @test !(dual1(1, PARTIALS) >= dual1(2, PARTIALS2))
+    @dtest dual1(2, PARTIALS) >= dual1(1, PARTIALS2)
+    @dtest dual1(1, PARTIALS) >= dual1(1, PARTIALS2)
+    @dtest !(dual1(1, PARTIALS) >= dual1(2, PARTIALS2))
 
-    @test dual2(dual1(2, M_PARTIALS), PARTIALS) >= dual2(dual1(1, M_PARTIALS2), PARTIALS2)
-    @test dual2(dual1(1, M_PARTIALS), PARTIALS) >= dual2(dual1(1, M_PARTIALS2), PARTIALS2)
-    @test !(dual2(dual1(1, M_PARTIALS), PARTIALS) >= dual2(dual1(2, M_PARTIALS2), PARTIALS2))
+    @dtest dual2(dual1(2, M_PARTIALS), PARTIALS) >= dual2(dual1(1, M_PARTIALS2), PARTIALS2)
+    @dtest dual2(dual1(1, M_PARTIALS), PARTIALS) >= dual2(dual1(1, M_PARTIALS2), PARTIALS2)
+    @dtest !(dual2(dual1(1, M_PARTIALS), PARTIALS) >= dual2(dual1(2, M_PARTIALS2), PARTIALS2))
 
     @test isnan(dual1(NaN, PARTIALS))
     @test !(isnan(FDNUM))
@@ -335,7 +335,7 @@ for N in (0,3), M in (0,4), V in (Int, Float32)
     @test typeof(WIDE_NESTED_FDNUM) === Dual{Tag2,Dual{Tag1,WIDE_T,Partials{M,WIDE_T}},Partials{N,WIDE_T}}
 
     @test value(WIDE_FDNUM) == PRIMAL
-    @test value(WIDE_NESTED_FDNUM) == PRIMAL
+    @dtest value(WIDE_NESTED_FDNUM) == PRIMAL
 
     @test convert(Dual, FDNUM) === FDNUM
     @test convert(Dual, NESTED_FDNUM) === NESTED_FDNUM

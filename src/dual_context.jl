@@ -67,7 +67,7 @@ end
 @inline isinteresting(ctx::TaggedCtx, f, args...) = false
 @inline isinteresting(ctx::TaggedCtx, f::typeof(Base.show), args...) = false
 
-function _frule_overdub2(ctx::TaggedCtx{T}, f, args...) where T
+@inline function _frule_overdub2(ctx::TaggedCtx{T}, f, args...) where T
     # Here we can assume that one or more `args` is a Dual with tag
     # of type T.
 
@@ -157,4 +157,13 @@ end
 function dualrun(f, args...)
     ctx = dualcontext()
     overdub(ctx, f, args...)
+end
+
+const BINARY_PREDICATES = Symbol[:isequal, :isless, :<, :>, :(==), :(!=), :(<=), :(>=)]
+
+for pred in BINARY_PREDICATES
+    @eval begin
+        isinteresting(ctx::TaggedCtx, ::typeof($(pred)), x, y) = anydual(x, y)
+        alternative(ctx::TaggedCtx, ::typeof($(pred)), x, y) = overdub(ctx, () -> $pred(value(x), value(y)))
+    end
 end
