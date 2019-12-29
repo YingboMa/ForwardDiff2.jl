@@ -39,7 +39,7 @@ end
 function D(f, x)
     dualrun() do
         xx = Dual(x, one(x))
-        partials(f(xx), 1)
+        partials(f(xx))
     end
 end
 

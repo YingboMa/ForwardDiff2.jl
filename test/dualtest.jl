@@ -1,7 +1,7 @@
 using Test
 using Random
 using ForwardDiff2
-using ForwardDiff2: Dual, Tag, value, partials, tagtype, dualrun
+using ForwardDiff2: Dual, Tag, value, partials, dualrun
 
 using StaticArrays
 
@@ -98,7 +98,6 @@ for N in (0,3), M in (0,4), V in (Int, Float32)
     @test Dual(PRIMAL, PARTIALS) === Dual{Nothing}(PRIMAL, PARTIALS)
 
     @test typeof(NESTED_FDNUM) == Dual{Tag2,Dual{Tag1,V,Partials{M,V}},Partials{N,V}}
-    @test typeof(dual1(widen(V)(PRIMAL), PARTIALS)) === Dual{Tag1,widen(V),Partials{N,widen(V)}}
 
     #############
     # Accessors #
@@ -112,7 +111,7 @@ for N in (0,3), M in (0,4), V in (Int, Float32)
     @test partials(NESTED_FDNUM) === PARTIALS
 
     for i in 1:N
-        @test partials(FDNUM, i) == PARTIALS[i]
+        @test partials(FDNUM)[i] == PARTIALS[i]
         for j in 1:M
             @test partials(NESTED_FDNUM) == PARTIALS
         end
@@ -120,9 +119,6 @@ for N in (0,3), M in (0,4), V in (Int, Float32)
 
     @test ForwardDiff2.npartials(FDNUM) == N
     @test ForwardDiff2.npartials(NESTED_FDNUM) == N
-
-    @test ForwardDiff2.valtype(FDNUM) == V
-    @test ForwardDiff2.valtype(NESTED_FDNUM) == Dual{Tag1,V,Partials{M,V}}
 
     #####################
     # Generic Functions #
@@ -311,39 +307,6 @@ for N in (0,3), M in (0,4), V in (Int, Float32)
     @test isodd(dual2(dual1(1, 1), 1))
     @test !(isodd(dual2(dual1(2, 1), 1)))
 
-    ########################
-    # Promotion/Conversion #
-    ########################
-
-    WIDE_T = widen(V)
-
-    @test promote_type(Dual{Tag1,V,N}, V) == Dual{Tag1,V,N}
-    @test promote_type(Dual{Tag1,V,N}, WIDE_T) == Dual{Tag1,WIDE_T,N}
-    @test promote_type(Dual{Tag1,WIDE_T,N}, V) == Dual{Tag1,WIDE_T,N}
-    @test promote_type(Dual{Tag1,V,N}, Dual{Tag1,V,N}) == Dual{Tag1,V,N}
-    @test promote_type(Dual{Tag1,V,N}, Dual{Tag1,WIDE_T,N}) == Dual{Tag1,WIDE_T,N}
-    @test promote_type(Dual{Tag1,WIDE_T,N}, Dual{Tag1,Dual{Tag1,V,M},N}) == Dual{Tag1,Dual{Tag1,WIDE_T,M},N}
-
-    # issue #322
-    @test promote_type(Bool, Dual{Tag1,V,N}) == Dual{Tag1,promote_type(Bool, V),N}
-    @test promote_type(BigFloat, Dual{Tag1,V,N}) == Dual{Tag1,promote_type(BigFloat, V),N}
-
-    WIDE_FDNUM = convert(Dual{Tag1,WIDE_T,Partials{N,WIDE_T}}, FDNUM)
-    WIDE_NESTED_FDNUM = convert(Dual{Tag2,Dual{Tag1,WIDE_T,Partials{M,WIDE_T}},Partials{N,WIDE_T}}, NESTED_FDNUM)
-
-    @test typeof(WIDE_FDNUM) === Dual{Tag1,WIDE_T,Partials{N,WIDE_T}}
-    @test typeof(WIDE_NESTED_FDNUM) === Dual{Tag2,Dual{Tag1,WIDE_T,Partials{M,WIDE_T}},Partials{N,WIDE_T}}
-
-    @test value(WIDE_FDNUM) == PRIMAL
-    @dtest value(WIDE_NESTED_FDNUM) == PRIMAL
-
-    @test convert(Dual, FDNUM) === FDNUM
-    @test convert(Dual, NESTED_FDNUM) === NESTED_FDNUM
-    @test convert(Dual{Tag1,V,Partials{N,V}}, FDNUM) === FDNUM
-    @test convert(Dual{Tag2,Dual{Tag1,V,Partials{M,V}},Partials{N,V}}, NESTED_FDNUM) === NESTED_FDNUM
-    @test convert(Dual{Tag1,WIDE_T,Partials{N,WIDE_T}}, PRIMAL) === dual1(WIDE_T(PRIMAL), zero(Partials{N,WIDE_T}))
-    @test convert(Dual{Tag2,Dual{Tag1,WIDE_T,Partials{M,WIDE_T}},Partials{N,WIDE_T}}, PRIMAL) === dual2(dual1(WIDE_T(PRIMAL), zero(Partials{M,WIDE_T})), zero(Partials{N,V}))
-
     ##############
     # Arithmetic #
     ##############
@@ -413,14 +376,13 @@ for N in (0,3), M in (0,4), V in (Int, Float32)
     @dtest2 dual_isapprox(NESTED_FDNUM^PRIMAL, exp(PRIMAL * log(NESTED_FDNUM)))
     @dtest2 dual_isapprox(PRIMAL^NESTED_FDNUM, exp(NESTED_FDNUM * log(PRIMAL)))
 
-    @dtest_broken partials(NaNMath.pow(Dual(-2.0, 1.0), Dual(2.0, 0.0)), 1) == -4.0
+    @dtest_broken partials(NaNMath.pow(Dual(-2.0, 1.0), Dual(2.0, 0.0)))[1] == -4.0
 
     ###################################
     # General Mathematical Operations #
     ###################################
 
-    #TODO:????
-    @dtest_broken conj(FDNUM) === FDNUM
+    @dtest conj(FDNUM) == FDNUM
     @dtest conj(NESTED_FDNUM) === NESTED_FDNUM
 
     @dtest transpose(FDNUM) === FDNUM
@@ -445,7 +407,7 @@ for N in (0,3), M in (0,4), V in (Int, Float32)
                     x = rand() + $modifier
                     dx = dualrun(()->$M.$f(Dual(x, one(x))))
                     @dtest value(dx) == $M.$f(x)
-                    @dtest partials(dx, 1) == $deriv
+                    @dtest partials(dx)[1] == $deriv
                 end
             elseif arity == 2
                 derivs = DiffRules.diffrule(M, f, :x, :y)
@@ -458,14 +420,14 @@ for N in (0,3), M in (0,4), V in (Int, Float32)
                     @dtest value(dx) == $M.$f(x, y)
                     @dtest value(dy) == value(dx)
                     if isnan(actualdx)
-                        @dtest isnan(partials(dx, 1))
+                        @dtest isnan(partials(dx)[1])
                     else
-                        @dtest partials(dx, 1) ≈ actualdx
+                        @dtest partials(dx)[1] ≈ actualdx
                     end
                     if isnan(actualdy)
-                        @dtest isnan(partials(dy, 1))
+                        @dtest isnan(partials(dy)[1])
                     else
-                        @dtest partials(dy, 1) ≈ actualdy
+                        @dtest partials(dy)[1] ≈ actualdy
                     end
                 end
             end

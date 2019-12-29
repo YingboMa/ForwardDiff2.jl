@@ -22,7 +22,7 @@ function Base.print_array(io::IO, da::DualArray)
     Base.println(io)
     for i=1:npartials(da)
         Base.printstyled(io,"Partials($i):\n", bold=false, color=3)
-        Base.print_array(ioc, partials.(da, i))
+        Base.print_array(ioc, getindex.(partials.(da), i))
         i !== npartials(da) && Base.println(io)
     end
     return nothing
@@ -100,8 +100,9 @@ Base.@propagate_inbounds function Base.setindex!(d::DualArray, dual, i::Int...)
     dd[ii] = value(dual)
 
     slice_len = length(d)
+    ps = partials(dual)
     for j = 1:npartials(d)
-        dd[j * slice_len + ii] = partials(dual, j)
+        dd[j * slice_len + ii] = ps[j]
     end
     return dual
 end

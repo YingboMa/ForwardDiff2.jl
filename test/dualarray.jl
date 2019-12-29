@@ -17,7 +17,7 @@ using StaticArrays: SVector
         dx .= sin.(x)
         @test_broken sin.(x) == dx
         @test sin.(_x) == value.(dx)
-        @test cos.(_x) == partials.(dx, 1)
+        @test cos.(_x) == first.(partials.(dx))
     end
 end
 

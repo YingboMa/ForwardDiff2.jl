@@ -30,14 +30,8 @@ end
 @inline _partials(::Any, x) = Zero()
 @inline _partials(::Tag{T}, d::Dual{Tag{T}}) where T = d.partials
 
-#=
-function Wirtinger(primal::Partials, conjugate::Union{Number,ChainRulesCore.AbstractDifferential})
-    return Partials(map(p->Wirtinger(p, conjugate), primal.values))
-end
-function Wirtinger(primal::Partials, conjugate::Partials)
-    return Partials(map((p, c)->Wirtinger(p, c), primal.values, conjugate.values))
-end
-=#
+Wirtinger(primal, conjugate) = Wirtinger.(primal, conjugate)
+
 @inline _values(S, xs) = map(x->_value(S, x), xs)
 @inline _partialss(S, xs) = map(x->_partials(S, x), xs)
 
@@ -77,7 +71,7 @@ end
 
     # call frule to see if there is a rule for this call:
     if ctx.metadata isa Tag
-        ctx1 = similarcontext(ctx, metadata=innertag(ctx.metadata))
+        ctx1 = similarcontext(ctx, metadata=oldertag(ctx.metadata))
 
         # we call frule with an older context because the Dual numbers may
         # themselves contain Dual numbers that were created in an older context
@@ -92,7 +86,7 @@ end
         # a closure which closes over a Dual number, hence we call
         # recurse. Recurse overdubs the calls inside `f` and not `f` itself
 
-        return Cassette.recurse(ctx, f, args...)
+        return Cassette.overdub(ctx, f, args...)
     else
         # this means there exists an frule for this specific call.
         # frule_result is then a tuple (val, pushforward) where val
@@ -108,7 +102,7 @@ end
         # we call it with the older context because the partials
         # might themselves be Duals from older contexts
         if ctx.metadata isa Tag
-            ctx1 = similarcontext(ctx, metadata=innertag(ctx.metadata))
+            ctx1 = similarcontext(ctx, metadata=oldertag(ctx.metadata))
             ∂s = overdub(ctx1, pushforward, Zero(), ps...)
         else
             ∂s = pushforward(Zero(), ps...)
@@ -119,10 +113,10 @@ end
         # a tuple, we handle both cases:
         return if ∂s isa Tuple
             map(val, ∂s) do v, ∂
-                Dual{typeof(tag)}(v, ∂)
+                Dual{Tag{T}}(v, ∂)
             end
         else
-            Dual{typeof(tag)}(val, ∂s)
+            Dual{Tag{T}}(val, ∂s)
         end
     end
 end
@@ -145,7 +139,7 @@ end
         end
         # none of the arguments have the same tag as the context
         # try with the parent context
-        ctx1 = similarcontext(ctx, metadata=innertag(ctx.metadata))
+        ctx1 = similarcontext(ctx, metadata=oldertag(ctx.metadata))
         return overdub(ctx1, f, args...)
     else
         # call ChainRules.frule to execute `f` and
@@ -156,14 +150,16 @@ end
 
 function dualrun(f, args...)
     ctx = dualcontext()
-    overdub(ctx, f, args...)
+    return overdub(ctx, f, args...)
 end
 
 const BINARY_PREDICATES = Symbol[:isequal, :isless, :<, :>, :(==), :(!=), :(<=), :(>=)]
 
 for pred in BINARY_PREDICATES
-    @eval begin
-        isinteresting(ctx::TaggedCtx, ::typeof($(pred)), x, y) = anydual(x, y)
-        alternative(ctx::TaggedCtx, ::typeof($(pred)), x, y) = overdub(ctx, () -> $pred(value(x), value(y)))
+    @eval function alternative(ctx::TaggedCtx, ::typeof($(pred)), x, y)
+        vx, vy = value(x), value(y)
+        return isinteresting(ctx, $pred, vx, vy) ?
+        alternative(ctx, $pred, vx, vy) :
+        $pred(vx, vy)
     end
 end
