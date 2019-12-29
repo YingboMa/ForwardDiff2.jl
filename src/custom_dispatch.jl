@@ -79,6 +79,11 @@ function rewrite_ir(ctx, ref)
         (stmt, i) -> Base.Meta.isexpr(stmt, :call) ? 8 : nothing,
         (stmt, i) -> (s = newslot!(ir); rewrite_call(ctx, stmt, s, i)))
 
+    Cassette.insert_statements!(ir.code, ir.codelocs,
+                                (stmt, i) -> Base.Meta.isexpr(stmt, :(=)) && stmt.args[1] isa Core.SlotNumber && stmt.args[2] isa Expr && stmt.args[2].head == :call ? 8 : nothing,
+                                (stmt, i) -> rewrite_call(ctx, stmt.args[2], stmt.args[1], i))
+    global IRR= ir
+
     ir.ssavaluetypes = length(ir.code)
 
     # Core.Compiler.validate_code(ir)
