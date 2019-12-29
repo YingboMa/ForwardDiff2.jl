@@ -15,7 +15,8 @@ Calculus = "49dc2e85-a5d0-5ad3-a950-438e2897f1b9"
 DiffRules = "b552c78f-8df3-52c6-915a-8e097449b14b"
 NaNMath = "77ba4419-2d1f-58cd-9bb1-8ffee604a2e3"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "DiffRules", "NaNMath", "SpecialFunctions", "Calculus"]
+test = ["Test", "DiffRules", "NaNMath", "SpecialFunctions", "Calculus", "SafeTestsets"]

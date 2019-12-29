@@ -1,5 +1,3 @@
-module DualTest
-
 using Test
 using Random
 using ForwardDiff2
@@ -110,27 +108,21 @@ for N in (0,3), M in (0,4), V in (Int, Float32)
     @test value(FDNUM) == PRIMAL
     @test value(NESTED_FDNUM) === dual1(PRIMAL, M_PARTIALS)
 
-    #@test partials(PRIMAL) == Partials{0,V}(tuple())
     @test partials(FDNUM) == PARTIALS
     @test partials(NESTED_FDNUM) === PARTIALS
 
     for i in 1:N
         @test partials(FDNUM, i) == PARTIALS[i]
         for j in 1:M
-            # TODO: fix partials(d, i, j)
-            #@test partials(NESTED_FDNUM, i, j) == partials(PARTIALS[i], j)
+            @test partials(NESTED_FDNUM) == PARTIALS
         end
     end
 
     @test ForwardDiff2.npartials(FDNUM) == N
-    #@test ForwardDiff2.npartials(typeof(FDNUM)) == N
     @test ForwardDiff2.npartials(NESTED_FDNUM) == N
-    #@test ForwardDiff2.npartials(typeof(NESTED_FDNUM)) == N
 
     @test ForwardDiff2.valtype(FDNUM) == V
-    #@test ForwardDiff2.valtype(typeof(FDNUM)) == V
     @test ForwardDiff2.valtype(NESTED_FDNUM) == Dual{Tag1,V,Partials{M,V}}
-    #@test ForwardDiff2.valtype(typeof(NESTED_FDNUM)) == Dual{TestTag(),V,M}
 
     #####################
     # Generic Functions #
@@ -445,7 +437,7 @@ for N in (0,3), M in (0,4), V in (Int, Float32)
     if V != Int
         for (M, f, arity) in DiffRules.diffrules()
             in(f, (:hankelh1, :hankelh1x, :hankelh2, :hankelh2x, :/, :rem2pi)) && continue
-            println("       ...auto-testing $(M).$(f) with $arity arguments")
+            #println("       ...auto-testing $(M).$(f) with $arity arguments")
             if arity == 1
                 deriv = DiffRules.diffrule(M, f, :x)
                 modifier = in(f, (:asec, :acsc, :asecd, :acscd, :acosh, :acoth)) ? one(V) : zero(V)
@@ -513,5 +505,3 @@ end
     @dtest2 pow(x2, 1) === x2^1 == x2
     @dtest pow(x1, 0) === x1^0 === Dual(1.0, 0.0)
 end
-
-end # module
