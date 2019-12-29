@@ -74,25 +74,26 @@ function _frule_overdub2(ctx::TaggedCtx{T}, f, args...) where T
     tag = Tag{T}()
     # unwrap only duals with the tag T.
     vs = _values(tag, args)
-    @show f, vs
+
+    # extract the partials only for the current tag
+    # so we can pass them to the pushforward
+    ps = _partialss(tag, args)
 
     # call frule to see if there is a rule for this call:
     if ctx.metadata isa Tag
         ctx1 = similarcontext(ctx, metadata=innertag(ctx.metadata))
-        @show vs
 
-        @show 2, f, vs
+        f_pushforward = frule(f, vs..., ps...)
         # we call frule with an older context because the Dual numbers may
         # themselves contain Dual numbers that were created in an older context
-        frule_result = overdub(ctx1, frule, f, vs...)
+        frule_result = f_pushforward === nothing ? nothing : alternative(ctx1, f_pushforward, vs..., ps...)
     else
-        @show 1, f, vs
         if f === frule
             frule_result = nothing
         else
-            frule_result = frule(f, vs...)
+            f_pushforward = frule(f, vs..., ps...)
+            frule_result = f_pushforward === nothing ? nothing : f_pushforward(vs..., ps...)
         end
-        println("GOT FRULE_result", f, vs, frule_result)
     end
 
     if frule_result === nothing
@@ -101,29 +102,12 @@ function _frule_overdub2(ctx::TaggedCtx{T}, f, args...) where T
         # a closure which closes over a Dual number, hence we call
         # recurse. Recurse overdubs the calls inside `f` and not `f` itself
 
-        @show 3, f, vs
         return Cassette.overdub(ctx, f, args...)
     else
-        @show 4, f, vs
         # this means there exists an frule for this specific call.
-        # frule_result is then a tuple (val, pushforward) where val
-        # is the primal result. (Note: this may be Dual numbers but only
-        # with an older tag)
-        val, pushforward = frule_result
-
-        # extract the partials only for the current tag
-        # so we can pass them to the pushforward
-        ps = _partialss(tag, args)
-
-        # Call the pushforward to get new partials
-        # we call it with the older context because the partials
-        # might themselves be Duals from older contexts
-        if ctx.metadata isa Tag
-            ctx1 = similarcontext(ctx, metadata=innertag(ctx.metadata))
-            ∂s = overdub(ctx1, pushforward, Zero(), ps...)
-        else
-            ∂s = pushforward(Zero(), ps...)
-        end
+        # frule_result is then a tuple (val, ∂s) where val is the primal
+        # result. (Note: this may be Dual numbers but only with an older tag)
+        val, ∂s = frule_result
 
         # Attach the new partials to the primal result
         # multi-output `f` such as result in the new partials being
@@ -159,7 +143,6 @@ end
         ctx1 = similarcontext(ctx, metadata=innertag(ctx.metadata))
         return overdub(ctx1, f, args...)
     else
-        #global (ff, argss) = f, args
         # call ChainRules.frule to execute `f` and
         # get a function that computes the partials
         return _frule_overdub2(ctx, f, args...)
