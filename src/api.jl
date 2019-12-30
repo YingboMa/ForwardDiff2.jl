@@ -1,21 +1,28 @@
-using ForwardDiff2: dualrun, partials, Dual
+using StaticArrays: StaticArray, SMatrix, SVector
+using LinearAlgebra: Diagonal, I
 
 tilt(xs::AbstractArray{<:Number}) = xs'
 tilt(xs) = hcat(xs...)
 
+allpartials(xs) = map(partials, xs)
+
+function seed(v::SVector{N}) where N
+    SMatrix{N,N,eltype(v)}(I)
+end
+
+function seed(v)
+    Matrix(Diagonal(map(one, v)))
+end
+
 function D(f)
     # grad
     function deriv(arg::AbstractArray)
-        # no chunking
-        grads = map(arg, eachindex(arg)) do _, i
-            dualized = map(arg, eachindex(arg)) do x, j
-                dualrun(()->Dual(x, i == j ? one(x) : zero(x)))
-            end
-            res = dualrun(()->f(dualized))
-            return map(partials, res)
+        # always chunk
+        res = dualrun() do
+            darr = DualArray(arg, seed(arg))
+            f(darr)
         end
-        # TODO: fix performance of this:
-        tilt(grads)
+        tilt(allpartials(res))
     end
     # scalar
     function deriv(arg)
@@ -25,7 +32,7 @@ function D(f)
             return map(partials, res)
         end
     end
-    deriv
+    return deriv
 end
 
 #=

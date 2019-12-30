@@ -5,7 +5,7 @@ include("custom_dispatch.jl")
 include("tag.jl")
 include("dualarray.jl")
 include("dual_context.jl")
-include("jacobian.jl")
+include("api.jl")
 
 # Experimental
 #include("aosoa.jl")
