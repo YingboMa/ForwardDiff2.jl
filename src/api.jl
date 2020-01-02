@@ -3,6 +3,12 @@ using LinearAlgebra: Diagonal, I
 
 tilt(xs::AbstractArray{<:Number}) = xs'
 tilt(xs) = hcat(xs...)
+tilt(xs::StaticArray{<:Number}) = xs'
+function tilt(xs::StaticArray)
+    # Jacobian
+    tup = reduce((x,y)->tuple(x..., y...), map(x->x.data, xs.data))
+    SMatrix{length(xs), length(xs[1])}(tup)'
+end
 
 allpartials(xs) = map(partials, xs)
 
@@ -22,8 +28,7 @@ function D(f)
             darr = DualArray(arg, seed(arg))
             f(darr)
         end
-        #tilt(allpartials(res))
-        allpartials(res)
+        tilt(allpartials(res))
     end
     # scalar
     function deriv(arg)
