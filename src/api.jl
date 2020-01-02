@@ -12,6 +12,10 @@ end
 
 allpartials(xs) = map(partials, xs)
 
+function seed(v, i)
+    SVector(map((e, j) -> j == i ? one(e) : zero(e), v, eachindex(v))...)
+end
+
 function seed(v::SVector{N}) where N
     SMatrix{N,N,eltype(v)}(I)
 end
@@ -25,7 +29,9 @@ function D(f)
     function deriv(arg::AbstractArray)
         # always chunk
         res = dualrun() do
-            darr = DualArray(arg, seed(arg))
+            #darr = DualArray(arg, seed(arg))
+            darr = map((x, i)->Dual(x, seed(arg, i)), arg, eachindex(arg))
+            @show darr
             f(darr)
         end
         tilt(allpartials(res))
