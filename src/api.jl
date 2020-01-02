@@ -18,10 +18,8 @@ function D(f)
     # grad
     function deriv(arg::AbstractArray)
         # always chunk
-        res = dualrun() do
-            darr = DualArray(arg, seed(arg))
-            f(darr)
-        end
+        darr = DualArray(arg, seed(arg))
+        res = dualrun(()->f(darr))
         tilt(allpartials(res))
     end
     # scalar

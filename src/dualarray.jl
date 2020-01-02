@@ -10,7 +10,7 @@ struct DualArray{T,E,M,V<:AbstractArray,D<:AbstractArray} <: AbstractArray{E,M}
     function DualArray{T}(v::AbstractArray{E,N}, p::AbstractArray) where {T,E,N}
         # TODO: Fix the empty array case
         M = ndims(p)
-        VT = typeof(@view p[ntuple(_->1, Val(M-1))..., :])
+        VT = typeof(_slice(p, Base.tail(ntuple(_->1, Val{M}()))...))
         return new{T,Dual{T,E,VT},N,typeof(v),typeof(p)}(v, p)
     end
 end
@@ -33,7 +33,7 @@ function Base.print_array(io::IO, da::DualArray)
     return nothing
 end
 
-DualArray(a::AbstractArray, b::AbstractArray) = DualArray{typeof(dualtag())}(a, b)
+DualArray(a::AbstractArray, b::AbstractArray) = DualArray{typeof(dualrun(()->dualtag()))}(a, b)
 npartials(d::DualArray) = size(d.partials, ndims(d.partials))
 data(d::DualArray) = d.data
 allpartials(d::DualArray) = d.partials
@@ -49,8 +49,13 @@ Base.IndexStyle(d::DualArray) = Base.IndexStyle(data(d))
 Base.similar(d::DualArray{T}, ::Type{S}, dims::Dims) where {T, S} = DualArray{T}(similar(data(d)), similar(allpartials(d)))
 Base.eachindex(d::DualArray) = eachindex(data(d))
 
+using StaticArrays
+
+Base.@propagate_inbounds _slice(A, i...) = @view A[i..., :]
+Base.@propagate_inbounds _slice(A::StaticArray, i...) = A[i..., :]
+
 Base.@propagate_inbounds function Base.getindex(d::DualArray{T}, i::Int...) where {T}
-    return Dual{T}(data(d)[i...], @view allpartials(d)[i..., :])
+    return Dual{T}(data(d)[i...], _slice(allpartials(d), i...))
 end
 
 Base.@propagate_inbounds function Base.setindex!(d::DualArray{T}, dual::Dual{T}, i::Int...) where {T}
