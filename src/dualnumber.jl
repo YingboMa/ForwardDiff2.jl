@@ -159,6 +159,10 @@ Base.convert(::Type{Dual{T,V,P}}, d::Dual{T}) where {T,V,P} = Dual{T}(convert(V,
 Base.convert(::Type{Dual{T,V,P}}, x) where {T,V,P} = Dual{T}(convert(V, x), zero(P))
 Base.convert(::Type{Dual{T,V,P}}, x::Number) where {T,V,P} = Dual{T}(convert(V, x), zero(P))
 Base.convert(::Type{D}, d::D) where {D<:Dual} = d
+function Base.AbstractFloat(d::Dual{T,V,P}) where {T,V,P}
+    Dual{T}(convert(promote_type(Float16, V), value(d)),
+            map(p->convert(promote_type(Float16, V), p), partials(d)))
+end
 
 ###################
 # Pretty Printing #
