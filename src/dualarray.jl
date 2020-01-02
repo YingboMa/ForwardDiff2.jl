@@ -7,10 +7,9 @@ partial_type(::Dual{T,V,P}) where {T,V,P} = P
 struct DualArray{T,E,M,V<:AbstractArray,D<:AbstractArray} <: AbstractArray{E,M}
     data::V
     partials::D
-    function DualArray{T}(v::AbstractArray{E,N}, p::AbstractArray) where {T,E,N}
+    function DualArray{T}(v::AbstractArray{E,N}, p::AbstractArray{P,M}) where {T,E,N,P,M}
         # TODO: Fix the empty array case
-        M = ndims(p)
-        VT = typeof(_slice(p, Base.tail(ntuple(_->1, Val{M}()))...))
+        VT = typeof(_slice(p, Base.tail(ntuple(one, Val{M}()))...))
         return new{T,Dual{T,E,VT},N,typeof(v),typeof(p)}(v, p)
     end
 end
@@ -33,7 +32,7 @@ function Base.print_array(io::IO, da::DualArray)
     return nothing
 end
 
-DualArray(a::AbstractArray, b::AbstractArray) = DualArray{typeof(dualrun(()->dualtag()))}(a, b)
+DualArray(a::AbstractArray, b::AbstractArray) = DualArray{typeof(dualtag())}(a, b)
 npartials(d::DualArray) = size(d.partials, ndims(d.partials))
 data(d::DualArray) = d.data
 allpartials(d::DualArray) = d.partials

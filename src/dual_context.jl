@@ -47,11 +47,6 @@ Wirtinger(primal, conjugate) = Wirtinger.(primal, conjugate)
     Core._apply(alternative, (ctx, g), args...)
 end
 
-# this makes `log` work by making throw_complex_domainerror inferable, but not really sure why
-@inline isinteresting(ctx::TaggedCtx, f::typeof(Core.throw), xs) = true
-# add `DualContext` here to avoid ambiguity
-@noinline alternative(ctx::Union{DualContext,TaggedCtx}, f::typeof(Core.throw), arg) = throw(arg)
-
 # actually interesting:
 
 @inline isinteresting(ctx::TaggedCtx, f, a) = anydual(a)
@@ -163,3 +158,13 @@ for pred in BINARY_PREDICATES
         $pred(vx, vy)
     end
 end
+
+
+##### Inference Hacks
+# this makes `log` work by making throw_complex_domainerror inferable, but not really sure why
+@inline isinteresting(ctx::TaggedCtx, f::typeof(Core.throw), xs) = true
+# add `DualContext` here to avoid ambiguity
+@noinline alternative(ctx::Union{DualContext,TaggedCtx}, f::typeof(Core.throw), arg) = throw(arg)
+
+@inline isinteresting(ctx::TaggedCtx, f::typeof(Base.print_to_string), args...) = true
+@noinline alternative(ctx::Union{DualContext,TaggedCtx}, f::typeof(Base.print_to_string), args...) = f(args...)
