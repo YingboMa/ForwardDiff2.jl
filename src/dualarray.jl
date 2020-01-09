@@ -7,10 +7,16 @@ partial_type(::Dual{T,V,P}) where {T,V,P} = P
 struct DualArray{T,E,M,V<:AbstractArray,D<:AbstractArray} <: AbstractArray{E,M}
     data::V
     partials::D
-    function DualArray{T}(v::AbstractArray{E,N}, p::AbstractArray{P,M}) where {T,E,N,P,M}
-        # TODO: Fix the empty array case
-        VT = typeof(_slice(p, Base.tail(ntuple(one, Val{M}()))...))
-        return new{T,Dual{T,E,VT},N,typeof(v),typeof(p)}(v, p)
+    function DualArray{T}(v::AbstractArray{E,N}, p::P) where {T,E,N,P<:AbstractArray}
+        # TODO: non-allocating X?
+        X = typeof(similar(p, Base.tail(ntuple(_->0, Val(ndims(P))))))
+        # we need the eltype of `DualArray` to be `Dual{T,E,X}` as opposed to
+        # some kind of `view`, because we can convert `SubArray` to `Array` but
+        # not vise a versa.
+        #
+        # We need that to differentiate through the following code
+        # `(foo(x::AbstractArray{T})::T) where {T} = x[1]`
+        return new{T,Dual{T,E,X},N,typeof(v),typeof(p)}(v, p)
     end
 end
 
@@ -41,7 +47,6 @@ allpartials(d::DualArray) = d.partials
 ### Array interface
 ###
 
-Base.eltype(d::DualArray{T,E}) where {T,E} = Dual{T,E,npartials(d)}
 #droplast(d::Tuple) = d |> reverse |> Base.tail |> reverse
 Base.size(d::DualArray) = size(data(d))
 Base.IndexStyle(d::DualArray) = Base.IndexStyle(data(d))
