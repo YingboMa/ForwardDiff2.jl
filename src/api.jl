@@ -4,9 +4,9 @@ using LinearAlgebra: Diagonal, I
 extract_diffresult(xs::AbstractArray{<:Number}) = xs
 # need to optimize
 extract_diffresult(xs) = hcat(xs...)'
-function extract_diffresult(xs::StaticVector{<:StaticArray})
+function extract_diffresult(xs::StaticArray{<:Any,<:StaticArray})
     tup = reduce((x,y)->tuple(x..., y...), map(x->x.data, xs.data))
-    SMatrix{length(xs), length(xs[1])}(tup)
+    SMatrix{length(xs[1]), length(xs)}(tup)'
 end
 extract_diffresult(xs::AbstractMatrix{<:Number}) = xs
 extract_diffresult(xs::AbstractVector{<:Number}) = xs'
