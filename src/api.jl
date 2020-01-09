@@ -1,14 +1,15 @@
 using StaticArrays: StaticArray, SMatrix, SVector
 using LinearAlgebra: Diagonal, I
 
-tilt(xs::AbstractArray{<:Number}) = xs'
-tilt(xs) = hcat(xs...)
-tilt(xs::StaticArray{<:Number}) = xs'
-function tilt(xs::StaticArray)
-    # Jacobian
+extract_diffresult(xs::AbstractArray{<:Number}) = xs
+# need to optimize
+extract_diffresult(xs) = hcat(xs...)'
+function extract_diffresult(xs::StaticVector{<:StaticArray})
     tup = reduce((x,y)->tuple(x..., y...), map(x->x.data, xs.data))
-    SMatrix{length(xs), length(xs[1])}(tup)'
+    SMatrix{length(xs), length(xs[1])}(tup)
 end
+extract_diffresult(xs::AbstractMatrix{<:Number}) = xs
+extract_diffresult(xs::AbstractVector{<:Number}) = xs'
 
 allpartials(xs) = map(partials, xs)
 
@@ -24,11 +25,10 @@ function D(f)
     # grad
     function deriv(arg::AbstractArray)
         # always chunk
-        res = dualrun() do
-            darr = DualArray(arg, seed(arg))
-            f(darr)
-        end
-        tilt(allpartials(res))
+        darr = dualrun(()->DualArray(arg, seed(arg)))
+        res = dualrun(()->f(darr))
+        diffres = extract_diffresult(allpartials(res))
+        return diffres
     end
     # scalar
     function deriv(arg)
