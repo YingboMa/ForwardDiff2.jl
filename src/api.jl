@@ -1,5 +1,5 @@
 using StaticArrays: StaticArray, SMatrix, SVector
-using LinearAlgebra: Diagonal, I
+using LinearAlgebra: I
 
 extract_diffresult(xs::AbstractArray{<:Number}) = xs
 # need to optimize
@@ -17,15 +17,24 @@ function seed(v::SVector{N}) where N
     SMatrix{N,N,eltype(v)}(I)
 end
 
+function _seed(v, ij)
+    i, j = Tuple(ij)
+    vi = v[i]
+    return (i==j) ? one(vi) : zero(vi)
+end
+
 function seed(v)
-    Matrix(Diagonal(map(one, v)))
+    vv = vec(v)
+    ax = axes(vv, 1)
+    return _seed.(Ref(vv), CartesianIndices((ax, ax)))
 end
 
 function D(f)
     # grad
     function deriv(arg::AbstractArray)
         # always chunk
-        darr = dualrun(()->DualArray(arg, seed(arg)))
+        arg_partial = seed(arg)
+        darr = dualrun(()->DualArray(arg, arg_partial))
         res = dualrun(()->f(darr))
         diffres = extract_diffresult(allpartials(res))
         return diffres
