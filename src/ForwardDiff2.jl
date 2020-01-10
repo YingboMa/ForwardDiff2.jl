@@ -8,6 +8,6 @@ include("dual_context.jl")
 include("api.jl")
 
 # Experimental
-#include("aosoa.jl")
+#include("experiment/aosoa.jl")
 
 end # module
