@@ -1,8 +1,6 @@
 using StaticArrays: SVector
 
 partial_type(::Dual{T,V,P}) where {T,V,P} = P
-# TODO: Tagging?
-# TODO: Integrate better with SVector. Maybe even use SIMD.jl?
 
 struct DualArray{T,E,M,V<:AbstractArray,D<:AbstractArray} <: AbstractArray{E,M}
     data::V
