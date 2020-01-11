@@ -40,12 +40,13 @@ function D(f)
         return diffres
     end
     # scalar
-    function deriv(arg)
-        dualrun() do
-            dualized = map(x->Dual(x, one(x)), arg)
-            res = f(dualized)
-            return map(partials, res)
+    function deriv(x)
+        dx = one(x)
+        res = dualrun() do
+            dualized = Dual(x, dx)
+            f(dualized)
         end
+        return map(partials, res)
     end
     return deriv
 end
