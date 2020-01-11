@@ -1,7 +1,7 @@
 using Cassette
 using ChainRules
 using ChainRulesCore
-import ChainRulesCore: Wirtinger, Zero
+import ChainRulesCore: Zero
 
 using Cassette: overdub, Context, nametype, similarcontext
 
@@ -29,8 +29,6 @@ end
 
 @inline _partials(::Any, x) = Zero()
 @inline _partials(::Tag{T}, d::Dual{Tag{T}}) where T = d.partials
-
-Wirtinger(primal, conjugate) = Wirtinger.(primal, conjugate)
 
 @inline _values(S, xs) = map(x->_value(S, x), xs)
 @inline _partialss(S, xs) = map(x->_partials(S, x), xs)
@@ -64,15 +62,22 @@ end
     # unwrap only duals with the tag T.
     vs = _values(tag, args)
 
+    # extract the partials only for the current tag
+    # so we can pass them to the pushforward
+    ps = _partialss(tag, args)
+
+    # default `dself` to `Zero()`
+    dself = Zero()
+
     # call frule to see if there is a rule for this call:
     if ctx.metadata isa Tag
         ctx1 = similarcontext(ctx, metadata=oldertag(ctx.metadata))
 
         # we call frule with an older context because the Dual numbers may
         # themselves contain Dual numbers that were created in an older context
-        frule_result = overdub(ctx1, frule, f, vs...)
+        frule_result = overdub(ctx1, frule, f, vs..., dself, ps...)
     else
-        frule_result = frule(f, vs...)
+        frule_result = frule(f, vs..., dself, ps...)
     end
 
     if frule_result === nothing
@@ -80,32 +85,16 @@ end
         # We can't just do f(args...) here because `f` might be
         # a closure which closes over a Dual number, hence we call
         # recurse. Recurse overdubs the calls inside `f` and not `f` itself
-
         return Cassette.overdub(ctx, f, args...)
     else
         # this means there exists an frule for this specific call.
         # frule_result is then a tuple (val, pushforward) where val
         # is the primal result. (Note: this may be Dual numbers but only
         # with an older tag)
-        val, pushforward = frule_result
+        val, ∂s = frule_result
+        ∂s = extern(∂s)
+        ∂s = map(_->∂s, first(ps))
 
-        # extract the partials only for the current tag
-        # so we can pass them to the pushforward
-        ps = _partialss(tag, args)
-
-        # Call the pushforward to get new partials
-        # we call it with the older context because the partials
-        # might themselves be Duals from older contexts
-        if ctx.metadata isa Tag
-            ctx1 = similarcontext(ctx, metadata=oldertag(ctx.metadata))
-            ∂s = overdub(ctx1, pushforward, Zero(), ps...)
-        else
-            ∂s = pushforward(Zero(), ps...)
-        end
-
-        # Attach the new partials to the primal result
-        # multi-output `f` such as result in the new partials being
-        # a tuple, we handle both cases:
         return if ∂s isa Tuple
             map(val, ∂s) do v, ∂
                 Dual{Tag{T}}(v, ∂)
