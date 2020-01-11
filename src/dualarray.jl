@@ -1,19 +1,18 @@
 using StaticArrays: SVector, StaticArray
 
-partial_type(::Dual{T,V,P}) where {T,V,P} = P
+valsize(v::Array) = size(v, ndims(v))
 
-struct DualArray{T,E,M,V<:AbstractArray,D<:AbstractArray} <: AbstractArray{E,M}
+Base.:+(x::StaticArray) = x
+
+struct DualArray{E,M,V<:AbstractArray,D<:AbstractArray,N#=npartials=#} <: AbstractArray{E,M}
     data::V
     partials::D
-    function DualArray{T}(v::AbstractArray{E,N}, p::P) where {T,E,N,P<:AbstractArray}
-        X = p isa StaticArray ? typeof(vec(p)[axes(p, ndims(p))]) : typeof(vec(p))
-        # we need the eltype of `DualArray` to be `Dual{T,E,X}` as opposed to
-        # some kind of `view`, because we can convert `SubArray` to `Array` but
-        # not vise a versa.
-        #
-        # We need that to differentiate through the following code
-        # `(foo(x::AbstractArray{T})::T) where {T} = x[1]`
-        return new{T,Dual{T,E,X},N,typeof(v),typeof(p)}(v, p)
+    # ndims(data) + 1 == ndims(partials)
+    function DualArray{T}(v::AbstractArray, p) where {T}
+        N = valsize(p)
+        # only use SVector for now
+        X = SVector{N,eltype(p)}
+        return new{Dual{T,eltype(v),X},ndims(v),typeof(v),typeof(p),N}(v, p)
     end
 end
 
@@ -36,7 +35,8 @@ function Base.print_array(io::IO, da::DualArray)
 end
 
 DualArray(a::AbstractArray, b::AbstractArray) = DualArray{typeof(dualtag())}(a, b)
-npartials(d::DualArray) = (ps = allpartials(d); size(ps, ndims(ps)))
+npartials(d::DualArray) = npartials(typeof(d))
+npartials(::Type{DualArray{E,M,V,D,N}}) where {E,M,V,D,N} = N
 data(d::DualArray) = d.data
 allpartials(d::DualArray) = d.partials
 
@@ -50,14 +50,18 @@ Base.IndexStyle(d::DualArray) = Base.IndexStyle(data(d))
 Base.similar(d::DualArray{T}, ::Type{S}, dims::Dims) where {T, S} = DualArray{T}(similar(data(d)), similar(allpartials(d)))
 Base.eachindex(d::DualArray) = eachindex(data(d))
 
-Base.@propagate_inbounds _slice(A, i...) = @view A[i..., :]
-Base.@propagate_inbounds _slice(A::StaticArray, i...) = A[i..., :]
+#Base.@propagate_inbounds _slice(A, i...) = @view A[i..., :]
+#Base.@propagate_inbounds _slice(A::StaticArray, i...) = A[i..., :]
 
-Base.@propagate_inbounds function Base.getindex(d::DualArray{T}, i::Int...) where {T}
-    return Dual{T}(data(d)[i...], _slice(allpartials(d), i...))
+partial_type(::Type{Dual{T,V,P}}) where {T,V,P} = P
+Base.@propagate_inbounds function Base.getindex(d::DualArray{<:Dual{T}}, i::Int...) where {T}
+    ps = allpartials(d)
+    P = partial_type(eltype(d))
+    partials_tuple = ntuple(j->ps[i..., j], Val(npartials(d)))
+    return Dual{T}(data(d)[i...], P(partials_tuple))
 end
 
-Base.@propagate_inbounds function Base.setindex!(d::DualArray{T}, dual::Dual{T}, i::Int...) where {T}
+Base.@propagate_inbounds function Base.setindex!(d::DualArray{<:Dual{T}}, dual::Dual{T}, i::Int...) where {T}
     data(d)[i...] = value(dual)
     allpartials(d)[i..., :] .= partials(dual)
     return dual
