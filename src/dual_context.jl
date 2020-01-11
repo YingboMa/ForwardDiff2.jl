@@ -92,8 +92,6 @@ end
         # is the primal result. (Note: this may be Dual numbers but only
         # with an older tag)
         val, ∂s = frule_result
-        ∂s = extern(∂s)
-        ∂s = map(_->∂s, first(ps))
 
         return if ∂s isa Tuple
             map(val, ∂s) do v, ∂

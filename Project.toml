@@ -14,7 +14,7 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 [compat]
 Cassette = "0.3.0"
 ChainRules = "0.3"
-ChainRulesCore = "0.5"
+ChainRulesCore = "0.5.1"
 StaticArrays = "0.11, 0.12"
 
 [extras]
