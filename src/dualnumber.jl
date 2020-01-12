@@ -89,7 +89,7 @@ dualtag() = nothing
 
 @inline partials(d::Dual) = d.partials
 
-@inline npartials(d::Dual) = (ps=d.partials) isa ChainRulesCore.AbstractDifferential ? 1 : length(d.partials)
+@inline npartials(d::Dual) = (ps = partials(d)) isa ChainRulesCore.AbstractDifferential ? 1 : length(d.partials)
 
 #####################
 # Generic Functions #

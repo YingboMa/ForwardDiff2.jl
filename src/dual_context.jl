@@ -108,7 +108,12 @@ end
 @inline isinteresting(ctx::TaggedCtx, f, a, b, c) = anydual(a, b, c)
 @inline isinteresting(ctx::TaggedCtx, f, a, b, c, d) = anydual(a, b, c, d)
 @inline isinteresting(ctx::TaggedCtx, f, args...) = false
-@inline isinteresting(ctx::TaggedCtx, f::typeof(Base.show), args...) = false
+@inline isinteresting(ctx::TaggedCtx, f::Core.Builtin, args...) = false
+@inline isinteresting(ctx::TaggedCtx, f::Union{typeof(Base.show),typeof(Base.print)}, args...) = false
+@inline isinteresting(ctx::TaggedCtx, f::Union{typeof(Base.setindex!),typeof(Base.getindex)}, ::DualArray, args...) = false
+@inline isinteresting(ctx::TaggedCtx, f::Union{typeof(Base.getproperty)}, ::Union{DualArray,Dual}, args...) = false
+@inline isinteresting(ctx::TaggedCtx, f::Union{typeof(ForwardDiff2.find_dual),
+                                               typeof(ForwardDiff2.anydual)}, args...) = false
 
 @specialize_vararg 4 @inline function _frule_overdub2(ctx::TaggedCtx{T}, f::F, args...) where {T,F}
     # Here we can assume that one or more `args` is a Dual with tag
