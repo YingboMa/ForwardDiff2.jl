@@ -110,7 +110,7 @@ end
 @inline isinteresting(ctx::TaggedCtx, f, args...) = false
 @inline isinteresting(ctx::TaggedCtx, f::typeof(Base.show), args...) = false
 
-@inline function _frule_overdub2(ctx::TaggedCtx{T}, f::F, args::Vararg{Any,N}) where {T,F,N}
+@specialize_vararg 4 @inline function _frule_overdub2(ctx::TaggedCtx{T}, f::F, args...) where {T,F}
     # Here we can assume that one or more `args` is a Dual with tag
     # of type T.
 
@@ -159,7 +159,7 @@ end
     end
 end
 
-@inline function alternative(ctx::TaggedCtx{T}, f::F, args::Vararg{Any,N}) where {T,F,N}
+@specialize_vararg 4 @inline function alternative(ctx::TaggedCtx{T}, f::F, args...) where {T,F}
     # This method only executes if `args` contains at least 1 Dual
     # the question is what is its tag
 
