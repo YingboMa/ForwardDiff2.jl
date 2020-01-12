@@ -6,8 +6,7 @@ struct DualArray{T,E,M,V<:AbstractArray,D<:AbstractArray} <: AbstractArray{E,M}
     data::V
     partials::D
     function DualArray{T}(v::AbstractArray{E,N}, p::P) where {T,E,N,P<:AbstractArray}
-        # TODO: non-allocating X?
-        X = typeof(similar(p, Base.tail(ntuple(_->0, Val(ndims(P))))))
+        X = typeof(vec(p))
         # we need the eltype of `DualArray` to be `Dual{T,E,X}` as opposed to
         # some kind of `view`, because we can convert `SubArray` to `Array` but
         # not vise a versa.
