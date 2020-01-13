@@ -15,4 +15,8 @@ using StaticArrays
     # Hessian
     @test D(D(x->x[1]^x[2] + x[3]^3 + x[3]*x[2]*x[1]))(@SVector[1,2,3]) === @SMatrix [2 4 2; 4 0 1; 2 1 18.]
     @test D(D(x->x[1]^x[2] + x[3]^3 + x[3]*x[2]*x[1]))([1,2,3]) == [2 4 2; 4 0 1; 2 1 18.]
+    # inference
+    @inferred D(x->exp(x) + x^x + cos(x) + tan(x) + 2^x)(1)
+    # broken due to `Core._apply`
+    @test_broken @inferred D(x->exp(x) + x^x + cos(x) + tan(x) + 2^x + log(cos(x)) + sec(pi*x) - angle(x) + one(x) / log1p(sin(x)))(1)
 end

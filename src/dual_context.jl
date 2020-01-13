@@ -1,7 +1,63 @@
 using Cassette
 using ChainRules
 using ChainRulesCore
-import ChainRulesCore: Wirtinger, Zero
+import ChainRulesCore: Zero
+
+# TODO: remove the copy pasted code and add that package
+# copyed from SpecializeVarargs.jl, written by @MasonProtter
+using MacroTools: MacroTools, splitdef, combinedef, @capture
+
+macro specialize_vararg(n::Int, fdef::Expr)
+    @assert n > 0
+
+    macros = Symbol[]
+    while fdef.head == :macrocall && length(fdef.args) == 3
+        push!(macros, fdef.args[1])
+        fdef = fdef.args[3]
+    end
+
+    d = splitdef(fdef)
+    args = d[:args][end]
+    @assert d[:args][end] isa Expr && d[:args][end].head == Symbol("...") && d[:args][end].args[] isa Symbol
+    args_symbol = d[:args][end].args[]
+
+    fdefs = Expr(:block)
+
+    for i in 1:n-1
+        di = deepcopy(d)
+        pop!(di[:args])
+        args = Tuple(gensym("arg$j") for j in 1:i)
+        Ts   = Tuple(gensym("T$j")   for j in 1:i)
+
+        args_with_Ts = ((arg, T) -> :($arg :: $T)).(args, Ts)
+
+        di[:whereparams] = (di[:whereparams]..., Ts...)
+
+        push!(di[:args], args_with_Ts...)
+        pushfirst!(di[:body].args, :($args_symbol = $(Expr(:tuple, args...))))
+        cfdef = combinedef(di)
+        mcfdef = isempty(macros) ? cfdef : foldr((m,f) -> Expr(:macrocall, m, nothing, f), macros, init=cfdef)
+        push!(fdefs.args, mcfdef)
+    end
+
+    di = deepcopy(d)
+    pop!(di[:args])
+    args = tuple((gensym() for j in 1:n)..., :($(gensym("args"))...))
+    Ts   = Tuple(gensym("T$j")   for j in 1:n)
+
+    args_with_Ts = (((arg, T) -> :($arg :: $T)).(args[1:end-1], Ts)..., args[end])
+
+    di[:whereparams] = (di[:whereparams]..., Ts...)
+
+    push!(di[:args], args_with_Ts...)
+    pushfirst!(di[:body].args, :($args_symbol = $(Expr(:tuple, args...))))
+
+    cfdef = combinedef(di)
+    mcfdef = isempty(macros) ? cfdef : foldr((m,f) -> Expr(:macrocall, m, nothing, f), macros, init=cfdef)
+    push!(fdefs.args, mcfdef)
+
+    esc(fdefs)
+end
 
 using Cassette: overdub, Context, nametype, similarcontext
 
@@ -30,8 +86,6 @@ end
 @inline _partials(::Any, x) = Zero()
 @inline _partials(::Tag{T}, d::Dual{Tag{T}}) where T = d.partials
 
-Wirtinger(primal, conjugate) = Wirtinger.(primal, conjugate)
-
 @inline _values(S, xs) = map(x->_value(S, x), xs)
 @inline _partialss(S, xs) = map(x->_partials(S, x), xs)
 
@@ -48,15 +102,16 @@ Wirtinger(primal, conjugate) = Wirtinger.(primal, conjugate)
 end
 
 # actually interesting:
-
 @inline isinteresting(ctx::TaggedCtx, f, a) = anydual(a)
 @inline isinteresting(ctx::TaggedCtx, f, a, b) = anydual(a, b)
 @inline isinteresting(ctx::TaggedCtx, f, a, b, c) = anydual(a, b, c)
 @inline isinteresting(ctx::TaggedCtx, f, a, b, c, d) = anydual(a, b, c, d)
-@inline isinteresting(ctx::TaggedCtx, f, args...) = false
-@inline isinteresting(ctx::TaggedCtx, f::typeof(Base.show), args...) = false
+@inline isinteresting(ctx::TaggedCtx, f, args...) = anydual(args...)
+@inline isinteresting(ctx::TaggedCtx, f::Core.Builtin, args...) = false
+@inline isinteresting(ctx::TaggedCtx, f::Union{typeof(ForwardDiff2.find_dual),
+                                               typeof(ForwardDiff2.anydual)}, args...) = false
 
-@inline function _frule_overdub2(ctx::TaggedCtx{T}, f, args...) where T
+@specialize_vararg 4 @inline function _frule_overdub2(ctx::TaggedCtx{T}, f::F, args...) where {T,F}
     # Here we can assume that one or more `args` is a Dual with tag
     # of type T.
 
@@ -64,15 +119,22 @@ end
     # unwrap only duals with the tag T.
     vs = _values(tag, args)
 
+    # extract the partials only for the current tag
+    # so we can pass them to the pushforward
+    ps = _partialss(tag, args)
+
+    # default `dself` to `Zero()`
+    dself = Zero()
+
     # call frule to see if there is a rule for this call:
     if ctx.metadata isa Tag
         ctx1 = similarcontext(ctx, metadata=oldertag(ctx.metadata))
 
         # we call frule with an older context because the Dual numbers may
         # themselves contain Dual numbers that were created in an older context
-        frule_result = overdub(ctx1, frule, f, vs...)
+        frule_result = overdub(ctx1, frule, f, vs..., dself, ps...)
     else
-        frule_result = frule(f, vs...)
+        frule_result = frule(f, vs..., dself, ps...)
     end
 
     if frule_result === nothing
@@ -80,32 +142,14 @@ end
         # We can't just do f(args...) here because `f` might be
         # a closure which closes over a Dual number, hence we call
         # recurse. Recurse overdubs the calls inside `f` and not `f` itself
-
         return Cassette.overdub(ctx, f, args...)
     else
         # this means there exists an frule for this specific call.
         # frule_result is then a tuple (val, pushforward) where val
         # is the primal result. (Note: this may be Dual numbers but only
         # with an older tag)
-        val, pushforward = frule_result
+        val, ∂s = frule_result
 
-        # extract the partials only for the current tag
-        # so we can pass them to the pushforward
-        ps = _partialss(tag, args)
-
-        # Call the pushforward to get new partials
-        # we call it with the older context because the partials
-        # might themselves be Duals from older contexts
-        if ctx.metadata isa Tag
-            ctx1 = similarcontext(ctx, metadata=oldertag(ctx.metadata))
-            ∂s = overdub(ctx1, pushforward, Zero(), ps...)
-        else
-            ∂s = pushforward(Zero(), ps...)
-        end
-
-        # Attach the new partials to the primal result
-        # multi-output `f` such as result in the new partials being
-        # a tuple, we handle both cases:
         return if ∂s isa Tuple
             map(val, ∂s) do v, ∂
                 Dual{Tag{T}}(v, ∂)
@@ -116,7 +160,7 @@ end
     end
 end
 
-@inline function alternative(ctx::TaggedCtx{T}, f, args...) where {T}
+@specialize_vararg 4 @inline function alternative(ctx::TaggedCtx{T}, f::F, args...) where {T,F}
     # This method only executes if `args` contains at least 1 Dual
     # the question is what is its tag
 
@@ -161,10 +205,6 @@ end
 
 
 ##### Inference Hacks
-# this makes `log` work by making throw_complex_domainerror inferable, but not really sure why
-@inline isinteresting(ctx::TaggedCtx, f::typeof(Core.throw), xs) = true
-# add `DualContext` here to avoid ambiguity
-@noinline alternative(ctx::Union{DualContext,TaggedCtx}, f::typeof(Core.throw), arg) = throw(arg)
-
-@inline isinteresting(ctx::TaggedCtx, f::typeof(Base.print_to_string), args...) = true
-@noinline alternative(ctx::Union{DualContext,TaggedCtx}, f::typeof(Base.print_to_string), args...) = f(args...)
+@inline isinteresting(ctx::TaggedCtx, f::Union{typeof(Base.print_to_string),typeof(hash)}, args...) = false
+@inline Cassette.overdub(ctx::TaggedCtx, f::Union{typeof(Base.print_to_string),typeof(hash)}, args...) = f(args...)
+@inline Cassette.overdub(ctx::TaggedCtx, f::Core.Builtin, args...) = f(args...)

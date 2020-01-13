@@ -1,4 +1,4 @@
-using StaticArrays: SVector
+using StaticArrays: SVector, StaticArray
 
 partial_type(::Dual{T,V,P}) where {T,V,P} = P
 
@@ -6,8 +6,7 @@ struct DualArray{T,E,M,V<:AbstractArray,D<:AbstractArray} <: AbstractArray{E,M}
     data::V
     partials::D
     function DualArray{T}(v::AbstractArray{E,N}, p::P) where {T,E,N,P<:AbstractArray}
-        # TODO: non-allocating X?
-        X = typeof(similar(p, Base.tail(ntuple(_->0, Val(ndims(P))))))
+        X = p isa StaticArray ? typeof(vec(p)[axes(p, ndims(p))]) : typeof(vec(p))
         # we need the eltype of `DualArray` to be `Dual{T,E,X}` as opposed to
         # some kind of `view`, because we can convert `SubArray` to `Array` but
         # not vise a versa.
@@ -37,7 +36,7 @@ function Base.print_array(io::IO, da::DualArray)
 end
 
 DualArray(a::AbstractArray, b::AbstractArray) = DualArray{typeof(dualtag())}(a, b)
-npartials(d::DualArray) = size(d.partials, ndims(d.partials))
+npartials(d::DualArray) = (ps = allpartials(d); size(ps, ndims(ps)))
 data(d::DualArray) = d.data
 allpartials(d::DualArray) = d.partials
 
@@ -50,8 +49,6 @@ Base.size(d::DualArray) = size(data(d))
 Base.IndexStyle(d::DualArray) = Base.IndexStyle(data(d))
 Base.similar(d::DualArray{T}, ::Type{S}, dims::Dims) where {T, S} = DualArray{T}(similar(data(d)), similar(allpartials(d)))
 Base.eachindex(d::DualArray) = eachindex(data(d))
-
-using StaticArrays
 
 Base.@propagate_inbounds _slice(A, i...) = @view A[i..., :]
 Base.@propagate_inbounds _slice(A::StaticArray, i...) = A[i..., :]

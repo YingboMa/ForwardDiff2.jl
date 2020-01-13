@@ -89,7 +89,7 @@ dualtag() = nothing
 
 @inline partials(d::Dual) = d.partials
 
-@inline npartials(d::Dual) = (ps = d.partials) isa Wirtinger ? 1 : length(ps)
+@inline npartials(d::Dual) = (ps = partials(d)) isa ChainRulesCore.AbstractDifferential ? 1 : length(d.partials)
 
 #####################
 # Generic Functions #
@@ -128,11 +128,13 @@ function Base.write(io::IO, d::Dual)
     write(io, partials(d))
 end
 
-@inline Base.zero(d::Dual) = zero(typeof(d))
-@inline Base.zero(::Type{Dual{T,V,P}}) where {T,V,P} = Dual{T}(zero(V), zero(P))
+@inline Base.zero(d::Dual{T}) where T = Dual{T}(zero(value(d)), zero(partials(d)))
+#@inline Base.zero(d::Dual) = zero(typeof(d))
+#@inline Base.zero(::Type{Dual{T,V,P}}) where {T,V,P} = Dual{T}(zero(V), zero(P))
 
-@inline Base.one(d::Dual) = one(typeof(d))
-@inline Base.one(::Type{Dual{T,V,P}}) where {T,V,P} = Dual{T}(one(V), zero(P))
+@inline Base.one(d::Dual{T}) where T = Dual{T}(one(value(d)), zero(partials(d)))
+#@inline Base.one(d::Dual) = one(typeof(d))
+#@inline Base.one(::Type{Dual{T,V,P}}) where {T,V,P} = Dual{T}(one(V), zero(P))
 
 @inline Random.rand(rng::AbstractRNG, d::Dual) = rand(rng, value(d))
 @inline Random.rand(::Type{Dual{T,V,P}}) where {T,V,P} = Dual{T}(rand(V), zero(P))
