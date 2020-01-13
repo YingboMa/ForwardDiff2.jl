@@ -209,10 +209,5 @@ end
 
 
 ##### Inference Hacks
-# this makes `log` work by making throw_complex_domainerror inferable, but not really sure why
-@inline isinteresting(ctx::TaggedCtx, f::typeof(Core.throw), xs) = true
-# add `DualContext` here to avoid ambiguity
-@noinline alternative(ctx::Union{DualContext,TaggedCtx}, f::typeof(Core.throw), arg) = throw(arg)
-
-@inline isinteresting(ctx::TaggedCtx, f::typeof(Base.print_to_string), args...) = true
-@noinline alternative(ctx::Union{DualContext,TaggedCtx}, f::typeof(Base.print_to_string), args...) = f(args...)
+@inline isinteresting(ctx::TaggedCtx, f::typeof(Base.print_to_string), args...) = false
+@inline Cassette.overdub(ctx::TaggedCtx, f::Core.Builtin, args...) = f(args...)
