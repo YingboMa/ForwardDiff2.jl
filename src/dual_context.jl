@@ -102,16 +102,12 @@ end
 end
 
 # actually interesting:
-
 @inline isinteresting(ctx::TaggedCtx, f, a) = anydual(a)
 @inline isinteresting(ctx::TaggedCtx, f, a, b) = anydual(a, b)
 @inline isinteresting(ctx::TaggedCtx, f, a, b, c) = anydual(a, b, c)
 @inline isinteresting(ctx::TaggedCtx, f, a, b, c, d) = anydual(a, b, c, d)
-@inline isinteresting(ctx::TaggedCtx, f, args...) = false
+@inline isinteresting(ctx::TaggedCtx, f, args...) = anydual(args...)
 @inline isinteresting(ctx::TaggedCtx, f::Core.Builtin, args...) = false
-@inline isinteresting(ctx::TaggedCtx, f::Union{typeof(Base.show),typeof(Base.print)}, args...) = false
-@inline isinteresting(ctx::TaggedCtx, f::Union{typeof(Base.setindex!),typeof(Base.getindex)}, ::DualArray, args...) = false
-@inline isinteresting(ctx::TaggedCtx, f::Union{typeof(Base.getproperty)}, ::Union{DualArray,Dual}, args...) = false
 @inline isinteresting(ctx::TaggedCtx, f::Union{typeof(ForwardDiff2.find_dual),
                                                typeof(ForwardDiff2.anydual)}, args...) = false
 
@@ -209,5 +205,6 @@ end
 
 
 ##### Inference Hacks
-@inline isinteresting(ctx::TaggedCtx, f::typeof(Base.print_to_string), args...) = false
+@inline isinteresting(ctx::TaggedCtx, f::Union{typeof(Base.print_to_string),typeof(hash)}, args...) = false
+@inline Cassette.overdub(ctx::TaggedCtx, f::Union{typeof(Base.print_to_string),typeof(hash)}, args...) = f(args...)
 @inline Cassette.overdub(ctx::TaggedCtx, f::Core.Builtin, args...) = f(args...)

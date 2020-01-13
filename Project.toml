@@ -13,9 +13,10 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
+julia = "1"
 Cassette = "0.3.0"
-ChainRules = "0.3"
-ChainRulesCore = "0.5"
+ChainRules = "0.3.1"
+ChainRulesCore = "0.5.3"
 StaticArrays = "0.11, 0.12"
 
 [extras]
