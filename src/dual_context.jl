@@ -65,6 +65,13 @@ Cassette.@context DualContext
 
 const TaggedCtx{T} = Context{nametype(DualContext),T}
 
+untagtype(::Type{<:Dual{Tag{T},V}}, ::Type{<:TaggedCtx{T}}) where {T,V} = V
+
+@inline @generated function _overdub(ctx::TaggedCtx{T}, f, args...) where T
+    F = Cassette.ReflectOn{Tuple{f, (untagtype(args[i], ctx) for i in 1:nfields(args))...}}
+    :(overdub(ctx, $F(), f, args...))
+end
+
 function dualcontext()
     # Note that the `dualtag()` is not of the same type as that of the
     # Duals constructed in this context, because it is called in the older context
@@ -136,7 +143,7 @@ end
 
         # we call frule with an older context because the Dual numbers may
         # themselves contain Dual numbers that were created in an older context
-        frule_result = overdub(ctx1, frule, f, vs..., dself, ps...)
+        frule_result = _overdub(ctx1, frule, f, vs..., dself, ps...)
     else
         frule_result = frule(f, vs..., dself, ps...)
     end
@@ -146,7 +153,7 @@ end
         # We can't just do f(args...) here because `f` might be
         # a closure which closes over a Dual number, hence we call
         # recurse. Recurse overdubs the calls inside `f` and not `f` itself
-        return Cassette.overdub(ctx, f, args...)
+        return _overdub(ctx, f, args...)
     else
         # this means there exists an frule for this specific call.
         # frule_result is then a tuple (val, pushforward) where val
@@ -172,7 +179,7 @@ end
 
     idx = find_dual(tag, args...)
     if f === Dual
-        return overdub(ctx, f, args...)
+        return _overdub(ctx, f, args...)
     elseif idx === 0
         # This is the base case for the recursion in this function which
         # tries to do the alternative with successively older contexts
@@ -183,7 +190,7 @@ end
         # none of the arguments have the same tag as the context
         # try with the parent context
         ctx1 = similarcontext(ctx, metadata=oldertag(ctx.metadata))
-        return overdub(ctx1, f, args...)
+        return _overdub(ctx1, f, args...)
     else
         # call ChainRules.frule to execute `f` and
         # get a function that computes the partials
@@ -193,7 +200,7 @@ end
 
 function dualrun(f, args...)
     ctx = dualcontext()
-    return overdub(ctx, f, args...)
+    return _overdub(ctx, f, args...)
 end
 
 const BINARY_PREDICATES = Symbol[:isequal, :isless, :<, :>, :(==), :(!=), :(<=), :(>=)]
