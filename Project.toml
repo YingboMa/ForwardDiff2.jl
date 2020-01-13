@@ -1,6 +1,6 @@
 name = "ForwardDiff2"
 uuid = "994df76e-a4c1-5e1f-bd5c-23b9b5303d4f"
-authors = ["Yingbo Ma <mayingbo5@gmail.com>"]
+authors = ["Yingbo Ma <mayingbo5@gmail.com>", "Shashi Gowda <gowda@mit.edu>"]
 version = "0.1.0"
 
 [deps]
@@ -14,9 +14,15 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
 julia = "1"
+Calculus = "0.5.1"
 Cassette = "0.3.0"
 ChainRules = "0.3.1"
 ChainRulesCore = "0.5.3"
+DiffRules = "1.0.0"
+MacroTools = "0.5.3"
+NaNMath = "0.3.3"
+SafeTestsets = "0.0.1"
+SpecialFunctions = "0.9"
 StaticArrays = "0.11, 0.12"
 
 [extras]

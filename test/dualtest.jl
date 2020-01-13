@@ -399,7 +399,7 @@ for N in (3), M in (4), V in (Int, Float32)
     if V != Int
         for (M, f, arity) in DiffRules.diffrules()
             in(f, (:hankelh1, :hankelh1x, :hankelh2, :hankelh2x, :/, :rem2pi)) && continue
-            #println("       ...auto-testing $(M).$(f) with $arity arguments")
+            println("       ...auto-testing $(M).$(f) with $arity arguments")
             if arity == 1
                 deriv = DiffRules.diffrule(M, f, :x)
                 modifier = in(f, (:asec, :acsc, :asecd, :acscd, :acosh, :acoth)) ? one(V) : zero(V)
