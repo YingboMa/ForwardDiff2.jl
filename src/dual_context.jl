@@ -66,6 +66,7 @@ Cassette.@context DualContext
 const TaggedCtx{T} = Context{nametype(DualContext),T}
 
 untagtype(::Type{<:Dual{Tag{T},V}}, ::Type{<:TaggedCtx{T}}) where {T,V} = V
+untagtype(::Type{V}, ::Type{<:TaggedCtx}) where {V} = V
 
 @inline @generated function _overdub(ctx::TaggedCtx{T}, f, args...) where T
     F = Cassette.ReflectOn{Tuple{f, (untagtype(args[i], ctx) for i in 1:nfields(args))...}}
