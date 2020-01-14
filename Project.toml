@@ -13,25 +13,29 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
-julia = "1"
 Calculus = "0.5.1"
 Cassette = "0.3.0"
 ChainRules = "0.3.1"
 ChainRulesCore = "0.5.3"
 DiffRules = "1.0.0"
+ForwardDiff = "0.10.8"
 MacroTools = "0.5.3"
 NaNMath = "0.3.3"
+OrdinaryDiffEq = "5.26"
 SafeTestsets = "0.0.1"
 SpecialFunctions = "0.9"
 StaticArrays = "0.11, 0.12"
+julia = "1"
 
 [extras]
 Calculus = "49dc2e85-a5d0-5ad3-a950-438e2897f1b9"
 DiffRules = "b552c78f-8df3-52c6-915a-8e097449b14b"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 NaNMath = "77ba4419-2d1f-58cd-9bb1-8ffee604a2e3"
+OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "DiffRules", "NaNMath", "SpecialFunctions", "Calculus", "SafeTestsets"]
+test = ["Test", "DiffRules", "NaNMath", "SpecialFunctions", "Calculus", "SafeTestsets", "OrdinaryDiffEq", "ForwardDiff"]
