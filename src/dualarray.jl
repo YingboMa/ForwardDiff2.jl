@@ -69,3 +69,8 @@ Base.@propagate_inbounds function Base.setindex!(d::DualArray{T}, dual::Dual{T},
     allpartials(d)[i..., :] .= partials(dual)
     return dual
 end
+
+Base.@propagate_inbounds function Base.setindex!(d::DualArray, x::Number, i::Int...)
+    data(d)[i...] = x
+    return x
+end
