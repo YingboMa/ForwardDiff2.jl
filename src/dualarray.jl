@@ -1,20 +1,28 @@
 using StaticArrays: SVector, StaticArray
 
-valsize(v::Array) = size(v, ndims(v))
-
 Base.:+(x::StaticArray) = x
 
-struct DualArray{E,M,V<:AbstractArray,D<:AbstractArray,N#=npartials=#} <: AbstractArray{E,M}
+struct DualArray{T,N,V<:AbstractArray,D<:AbstractArray,E,M} <: AbstractArray{E,M}
     data::V
     partials::D
     # ndims(data) + 1 == ndims(partials)
     function DualArray{T}(v::AbstractArray, p) where {T}
-        N = valsize(p)
+        N = size(p, ndims(p))
         # only use SVector for now
+        V, D = typeof(v), typeof(p)
         X = SVector{N,eltype(p)}
-        return new{Dual{T,eltype(v),X},ndims(v),typeof(v),typeof(p),N}(v, p)
+        E = Dual{T,eltype(v),X}
+        M = ndims(v)
+        return new{T,N,V,D,E,M}(v, p)
     end
 end
+
+DualArray(a::AbstractArray, b::AbstractArray) = DualArray{typeof(dualtag())}(a, b)
+data(d::DualArray) = d.data
+allpartials(d::DualArray) = d.partials
+
+npartials(d::DualArray) = npartials(typeof(d))
+npartials(::Type{<:DualArray{T,N}}) where {T,N} = N
 
 ###
 ### Printing
@@ -34,12 +42,6 @@ function Base.print_array(io::IO, da::DualArray)
     return nothing
 end
 
-DualArray(a::AbstractArray, b::AbstractArray) = DualArray{typeof(dualtag())}(a, b)
-npartials(d::DualArray) = npartials(typeof(d))
-npartials(::Type{DualArray{E,M,V,D,N}}) where {E,M,V,D,N} = N
-data(d::DualArray) = d.data
-allpartials(d::DualArray) = d.partials
-
 ###
 ### Array interface
 ###
@@ -54,14 +56,14 @@ Base.eachindex(d::DualArray) = eachindex(data(d))
 #Base.@propagate_inbounds _slice(A::StaticArray, i...) = A[i..., :]
 
 partial_type(::Type{Dual{T,V,P}}) where {T,V,P} = P
-Base.@propagate_inbounds function Base.getindex(d::DualArray{<:Dual{T}}, i::Int...) where {T}
+Base.@propagate_inbounds function Base.getindex(d::DualArray{T}, i::Int...) where {T}
     ps = allpartials(d)
     P = partial_type(eltype(d))
     partials_tuple = ntuple(j->ps[i..., j], Val(npartials(d)))
     return Dual{T}(data(d)[i...], P(partials_tuple))
 end
 
-Base.@propagate_inbounds function Base.setindex!(d::DualArray{<:Dual{T}}, dual::Dual{T}, i::Int...) where {T}
+Base.@propagate_inbounds function Base.setindex!(d::DualArray{T}, dual::Dual{T}, i::Int...) where {T}
     data(d)[i...] = value(dual)
     allpartials(d)[i..., :] .= partials(dual)
     return dual
