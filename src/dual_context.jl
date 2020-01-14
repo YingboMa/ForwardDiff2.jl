@@ -210,5 +210,6 @@ end
 
 ##### Inference Hacks
 @inline isinteresting(ctx::TaggedCtx, f::Union{typeof(Base.print_to_string),typeof(hash)}, args...) = false
-@noinline Cassette.overdub(ctx::TaggedCtx, f::Union{typeof(Base.print_to_string),typeof(hash)}, args...) = f(args...)
+@noinline Cassette.overdub(ctx::TaggedCtx, f::Union{typeof(Base.print_to_string),typeof(hash),typeof(Core.throw)}, args...) = f(args...)
 @inline Cassette.overdub(ctx::TaggedCtx, f::typeof(Base.Broadcast.check_broadcast_axes), args...) = f(args...)
+@inline Cassette.overdub(ctx::TaggedCtx, f::typeof(Base.Broadcast.preprocess_args), args...) = f(args...)
