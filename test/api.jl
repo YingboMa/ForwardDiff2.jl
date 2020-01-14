@@ -5,7 +5,9 @@ using OrdinaryDiffEq, ForwardDiff
 using LinearAlgebra: norm
 
 @testset "Derivative, Gradient, Jacobian, and Hessian" begin
-    @test D(sin)(1.0) == cos(1.0)
+    @test D(sin)(1.0) === cos(1.0)
+    @test D(float)(1) === 1
+    @test D(AbstractFloat)(1) === 1
     # Gradient
     @test D(x->[x, x^2])(3) == [1, 6]
     @test D(sum)([1,2,3]) == ones(3)'
