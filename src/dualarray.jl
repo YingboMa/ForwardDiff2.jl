@@ -6,8 +6,7 @@ struct DualArray{T,N,V<:AbstractArray,D<:AbstractArray,E,M} <: AbstractArray{E,M
     data::V
     partials::D
     # ndims(data) + 1 == ndims(partials)
-    function DualArray{T}(v::AbstractArray, p) where {T}
-        N = size(p, ndims(p))
+    function DualArray{T,N}(v, p) where {T,N}
         # only use SVector for now
         V, D = typeof(v), typeof(p)
         X = SVector{N,eltype(p)}
@@ -17,6 +16,7 @@ struct DualArray{T,N,V<:AbstractArray,D<:AbstractArray,E,M} <: AbstractArray{E,M
     end
 end
 
+DualArray{T}(v, p) where {T} = (N = size(p, ndims(p)); DualArray{T,N}(v, p))
 DualArray(a::AbstractArray, b::AbstractArray) = DualArray{typeof(dualtag())}(a, b)
 data(d::DualArray) = d.data
 allpartials(d::DualArray) = d.partials
@@ -48,8 +48,9 @@ end
 
 Base.size(d::DualArray) = size(data(d))
 Base.IndexStyle(d::DualArray) = Base.IndexStyle(data(d))
-Base.similar(d::DualArray{T}, ::Type{S}, dims::Dims) where {T, S} = DualArray{T}(similar(data(d)), similar(allpartials(d)))
+Base.similar(d::DualArray{T,N}, ::Type{S}, dims::Dims) where {T,N,S} = DualArray{T,N}(similar(data(d)), similar(allpartials(d)))
 Base.eachindex(d::DualArray) = eachindex(data(d))
+Base.copy(d::DualArray{T,N}) where {T,N} = DualArray{T,N}(copy(data(d)), copy(allpartials(d)))
 
 # neccsarry to make array code go fast
 Base.mightalias(x::AbstractArray, y::DualArray) = Base.mightalias(x, data(y))
