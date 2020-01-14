@@ -203,8 +203,12 @@ for pred in BINARY_PREDICATES
     end
 end
 
+#### recursion early termination condition
+@inline Cassette.overdub(ctx::TaggedCtx, f::Core.Builtin, args...) = f(args...)
+@inline Cassette.overdub(ctx::TaggedCtx{T}, f::Union{typeof(value),typeof(partials)}, d::Dual{T}) where {T<:Tag{Nothing}} = f(d)
+@inline Cassette.overdub(ctx::TaggedCtx{T}, f::typeof(allpartials), d::AbstractArray{<:Dual{T}})  where {T<:Tag{Nothing}} = f(d)
 
 ##### Inference Hacks
 @inline isinteresting(ctx::TaggedCtx, f::Union{typeof(Base.print_to_string),typeof(hash)}, args...) = false
-@inline Cassette.overdub(ctx::TaggedCtx, f::Union{typeof(Base.print_to_string),typeof(hash)}, args...) = f(args...)
-@inline Cassette.overdub(ctx::TaggedCtx, f::Core.Builtin, args...) = f(args...)
+@noinline Cassette.overdub(ctx::TaggedCtx, f::Union{typeof(Base.print_to_string),typeof(hash)}, args...) = f(args...)
+@inline Cassette.overdub(ctx::TaggedCtx, f::typeof(Base.Broadcast.check_broadcast_axes), args...) = f(args...)
