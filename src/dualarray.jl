@@ -46,14 +46,15 @@ end
 ### Array interface
 ###
 
-#droplast(d::Tuple) = d |> reverse |> Base.tail |> reverse
 Base.size(d::DualArray) = size(data(d))
 Base.IndexStyle(d::DualArray) = Base.IndexStyle(data(d))
 Base.similar(d::DualArray{T}, ::Type{S}, dims::Dims) where {T, S} = DualArray{T}(similar(data(d)), similar(allpartials(d)))
 Base.eachindex(d::DualArray) = eachindex(data(d))
 
-#Base.@propagate_inbounds _slice(A, i...) = @view A[i..., :]
-#Base.@propagate_inbounds _slice(A::StaticArray, i...) = A[i..., :]
+# neccsarry to make array code go fast
+Base.mightalias(x::AbstractArray, y::DualArray) = Base.mightalias(x, data(y))
+Base.mightalias(x::DualArray, y::AbstractArray) = Base.mightalias(y, x)
+Base.mightalias(x::DualArray, y::DualArray) = Base.mightalias(data(x), data(y))
 
 partial_type(::Type{Dual{T,V,P}}) where {T,V,P} = P
 Base.@propagate_inbounds function Base.getindex(d::DualArray{T}, i::Int...) where {T}
