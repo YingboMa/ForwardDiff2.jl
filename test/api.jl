@@ -28,6 +28,8 @@ end
 end
 
 @testset "Differentiate an ODE solver" begin
+    # TODO: drop derivative API
+    OrdinaryDiffEq.constvalue(t::Type{<:ForwardDiff2.Dual}) = ForwardDiff2.value(t)
     function lorenz(du, u, p, t)
         du[1] = 10.0 * (u[2] - u[1])
         du[2] = u[1] * (28.0 - u[3]) - u[2]

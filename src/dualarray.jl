@@ -48,7 +48,11 @@ end
 
 Base.size(d::DualArray) = size(data(d))
 Base.IndexStyle(d::DualArray) = Base.IndexStyle(data(d))
-Base.similar(d::DualArray{T,N}, ::Type{S}, dims::Dims) where {T,N,S} = DualArray{T,N}(similar(data(d)), similar(allpartials(d)))
+function Base.similar(d::DualArray{T,N}, ::Type{<:Dual{T,V,P}}, dims::Dims) where {T,V,N,P}
+    new_data = similar(data(d), V, dims)
+    new_partials = similar(allpartials(d), eltype(P), (N, reverse(dims)...))
+    return DualArray{T,N}(new_data, new_partials)
+end
 Base.eachindex(d::DualArray) = eachindex(data(d))
 Base.copy(d::DualArray{T,N}) where {T,N} = DualArray{T,N}(copy(data(d)), copy(allpartials(d)))
 
