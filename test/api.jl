@@ -2,7 +2,7 @@ using Test
 using ForwardDiff2: D, ForwardDiff2
 using StaticArrays
 using OrdinaryDiffEq, ForwardDiff
-using LinearAlgebra: norm
+using LinearAlgebra
 
 @testset "Derivative, Gradient, Jacobian, and Hessian" begin
     @test D(sin, 1) * true === cos(1.0)
