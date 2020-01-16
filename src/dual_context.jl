@@ -207,9 +207,9 @@ end
 @inline Cassette.overdub(ctx::TaggedCtx, f::Core.Builtin, args...) = f(args...)
 @inline Cassette.overdub(ctx::TaggedCtx{T}, f::Union{typeof(value),typeof(partials)}, d::Dual{T}) where {T<:Tag{Nothing}} = f(d)
 @inline Cassette.overdub(ctx::TaggedCtx{T}, f::typeof(allpartials), d::AbstractArray{<:Dual{T}})  where {T<:Tag{Nothing}} = f(d)
+@inline Cassette.overdub(ctx::TaggedCtx, f::typeof(Base.Broadcast.check_broadcast_axes), args...) = f(args...)
+@inline Cassette.overdub(ctx::TaggedCtx, f::typeof(Base.Broadcast.preprocess_args), args...) = f(args...)
 
 ##### Inference Hacks
 @inline isinteresting(ctx::TaggedCtx, f::Union{typeof(Base.print_to_string),typeof(hash)}, args...) = false
 @noinline Cassette.overdub(ctx::TaggedCtx, f::Union{typeof(Base.print_to_string),typeof(hash),typeof(Core.throw)}, args...) = f(args...)
-@inline Cassette.overdub(ctx::TaggedCtx, f::typeof(Base.Broadcast.check_broadcast_axes), args...) = f(args...)
-@inline Cassette.overdub(ctx::TaggedCtx, f::typeof(Base.Broadcast.preprocess_args), args...) = f(args...)
