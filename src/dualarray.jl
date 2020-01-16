@@ -1,21 +1,28 @@
 using StaticArrays: SVector, StaticArray
 
-partial_type(::Dual{T,V,P}) where {T,V,P} = P
+Base.:+(x::StaticArray) = x
 
-struct DualArray{T,E,M,V<:AbstractArray,D<:AbstractArray} <: AbstractArray{E,M}
+struct DualArray{T,N,V<:AbstractArray,D<:AbstractArray,E,M} <: AbstractArray{E,M}
     data::V
     partials::D
-    function DualArray{T}(v::AbstractArray{E,N}, p::P) where {T,E,N,P<:AbstractArray}
-        X = p isa StaticArray ? typeof(vec(p)[axes(p, ndims(p))]) : typeof(vec(p))
-        # we need the eltype of `DualArray` to be `Dual{T,E,X}` as opposed to
-        # some kind of `view`, because we can convert `SubArray` to `Array` but
-        # not vise a versa.
-        #
-        # We need that to differentiate through the following code
-        # `(foo(x::AbstractArray{T})::T) where {T} = x[1]`
-        return new{T,Dual{T,E,X},N,typeof(v),typeof(p)}(v, p)
+    # ndims(data) + 1 == ndims(partials)
+    function DualArray{T,N}(v, p) where {T,N}
+        # only use SVector for now
+        V, D = typeof(v), typeof(p)
+        X = SVector{N,eltype(p)}
+        E = Dual{T,eltype(v),X}
+        M = ndims(v)
+        return new{T,N,V,D,E,M}(v, p)
     end
 end
+
+DualArray{T}(v, p) where {T} = (N = size(p, ndims(p)); DualArray{T,N}(v, p))
+DualArray(a::AbstractArray, b::AbstractArray) = DualArray{typeof(dualtag())}(a, b)
+data(d::DualArray) = d.data
+allpartials(d::DualArray) = d.partials
+
+npartials(d::DualArray) = npartials(typeof(d))
+npartials(::Type{<:DualArray{T,N}}) where {T,N} = N
 
 ###
 ### Printing
@@ -35,30 +42,43 @@ function Base.print_array(io::IO, da::DualArray)
     return nothing
 end
 
-DualArray(a::AbstractArray, b::AbstractArray) = DualArray{typeof(dualtag())}(a, b)
-npartials(d::DualArray) = (ps = allpartials(d); size(ps, ndims(ps)))
-data(d::DualArray) = d.data
-allpartials(d::DualArray) = d.partials
-
 ###
 ### Array interface
 ###
 
-#droplast(d::Tuple) = d |> reverse |> Base.tail |> reverse
 Base.size(d::DualArray) = size(data(d))
 Base.IndexStyle(d::DualArray) = Base.IndexStyle(data(d))
-Base.similar(d::DualArray{T}, ::Type{S}, dims::Dims) where {T, S} = DualArray{T}(similar(data(d)), similar(allpartials(d)))
+# Having `Union{}` in `similar` usually means some people did unholy things
+# like `promote_op`, and they should stop.
+Base.similar(d::DualArray, ::Type{<:Union{}}, dims::Dims) = similar(d, eltype(d), dims)
+function Base.similar(d::DualArray{T,N}, ::Type{<:Dual{T,V,P}}, dims::Dims) where {T,N,V,P}
+    new_data = similar(data(d), V, dims)
+    new_partials = similar(allpartials(d), eltype(P), (N, reverse(dims)...))
+    return DualArray{T,N}(new_data, new_partials)
+end
 Base.eachindex(d::DualArray) = eachindex(data(d))
+Base.copy(d::DualArray{T,N}) where {T,N} = DualArray{T,N}(copy(data(d)), copy(allpartials(d)))
 
-Base.@propagate_inbounds _slice(A, i...) = @view A[i..., :]
-Base.@propagate_inbounds _slice(A::StaticArray, i...) = A[i..., :]
+# neccsarry to make array code go fast
+Base.mightalias(::AbstractArray, ::DualArray) = false
+Base.mightalias(::DualArray, ::AbstractArray) = false
+Base.mightalias(x::DualArray, y::DualArray) = Base.mightalias(data(x), data(y))
 
+partial_type(::Type{Dual{T,V,P}}) where {T,V,P} = P
 Base.@propagate_inbounds function Base.getindex(d::DualArray{T}, i::Int...) where {T}
-    return Dual{T}(data(d)[i...], _slice(allpartials(d), i...))
+    ps = allpartials(d)
+    P = partial_type(eltype(d))
+    partials_tuple = ntuple(j->ps[j, i...], Val(npartials(d)))
+    return Dual{T}(data(d)[i...], P(partials_tuple))
 end
 
 Base.@propagate_inbounds function Base.setindex!(d::DualArray{T}, dual::Dual{T}, i::Int...) where {T}
     data(d)[i...] = value(dual)
-    allpartials(d)[i..., :] .= partials(dual)
+    allpartials(d)[:, i...] .= partials(dual)
     return dual
+end
+
+Base.@propagate_inbounds function Base.setindex!(d::DualArray, x::Number, i::Int...)
+    data(d)[i...] = x
+    return x
 end

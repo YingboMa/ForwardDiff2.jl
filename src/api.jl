@@ -8,7 +8,7 @@ function extract_diffresult(xs::StaticArray{<:Any,<:StaticArray})
     tup = reduce((x,y)->tuple(x..., y...), map(x->x.data, xs.data))
     SMatrix{length(xs[1]), length(xs)}(tup)'
 end
-extract_diffresult(xs::AbstractMatrix{<:Number}) = xs
+extract_diffresult(xs::AbstractMatrix{<:Number}) = xs'
 extract_diffresult(xs::AbstractVector{<:Number}) = xs'
 
 allpartials(xs) = map(partials, xs)

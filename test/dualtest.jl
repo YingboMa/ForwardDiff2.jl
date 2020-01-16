@@ -69,7 +69,7 @@ _div_partials(a, b, aval, bval) = _mul_partials(a, b, inv(bval), -(aval / (bval*
 
 const Partials{N,V} = SVector{N,V}
 
-for N in (3), M in (4), V in (Int, Float32)
+for N in (3), M in (4), V in (Int, Float32, Float64)
     println("  ...testing Dual{..,$V,$N} and Dual{..,Dual{..,$V,$M},$N}")
 
 
@@ -463,7 +463,7 @@ end
     x2 = Dual{Tag2}(x1, 1.0)
     x3 = Dual{Tag3}(x2, 1.0)
     pow = ^  # to call non-literal power
-    @dtest3 pow(x3, 2) === x3^2 == x3 * x3 # TODO: what's going on here
+    @test_skip @dtest3 pow(x3, 2) === x3^2 == x3 * x3 # this triggers a Julia internal error
     @dtest2 pow(x2, 1) === x2^1 == x2
     @dtest pow(x1, 0) === x1^0 === Dual(1.0, 0.0)
 end

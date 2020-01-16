@@ -128,13 +128,11 @@ function Base.write(io::IO, d::Dual)
     write(io, partials(d))
 end
 
-@inline Base.zero(d::Dual{T}) where T = Dual{T}(zero(value(d)), zero(partials(d)))
-#@inline Base.zero(d::Dual) = zero(typeof(d))
-#@inline Base.zero(::Type{Dual{T,V,P}}) where {T,V,P} = Dual{T}(zero(V), zero(P))
+@inline Base.zero(d::Dual) = zero(typeof(d))
+@inline Base.zero(::Type{Dual{T,V,P}}) where {T,V,P} = Dual{T}(zero(V), zero(P))
 
-@inline Base.one(d::Dual{T}) where T = Dual{T}(one(value(d)), zero(partials(d)))
-#@inline Base.one(d::Dual) = one(typeof(d))
-#@inline Base.one(::Type{Dual{T,V,P}}) where {T,V,P} = Dual{T}(one(V), zero(P))
+@inline Base.one(d::Dual) = one(typeof(d))
+@inline Base.one(::Type{Dual{T,V,P}}) where {T,V,P} = Dual{T}(one(V), zero(P))
 
 @inline Random.rand(rng::AbstractRNG, d::Dual) = rand(rng, value(d))
 @inline Random.rand(::Type{Dual{T,V,P}}) where {T,V,P} = Dual{T}(rand(V), zero(P))
@@ -161,6 +159,8 @@ Base.convert(::Type{Dual{T,V,P}}, d::Dual{T}) where {T,V,P} = Dual{T}(convert(V,
 Base.convert(::Type{Dual{T,V,P}}, x) where {T,V,P} = Dual{T}(convert(V, x), zero(P))
 Base.convert(::Type{Dual{T,V,P}}, x::Number) where {T,V,P} = Dual{T}(convert(V, x), zero(P))
 Base.convert(::Type{D}, d::D) where {D<:Dual} = d
+Base.float(d::Dual{T,V,P}) where {T,V,P} = convert(Dual{T,float(V),P}, d)
+Base.AbstractFloat(d::Dual) = float(d)
 
 ###################
 # Pretty Printing #

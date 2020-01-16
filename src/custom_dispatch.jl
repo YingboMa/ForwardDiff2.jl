@@ -11,6 +11,15 @@ function rewrite_call(ctx, stmt, extraslot, i)
 
     # order of expressions we pre-assign
     # SSA for each expression here
+    #
+    # input:
+    #    f(x)
+    #
+    # After this pass:
+    #    isinteresting(ctx, f, x) ? alternative(f, x) : f(x)
+    #
+    # After overdub_pass!:
+    #    isinteresting(ctx, f, x) ? alternative(f, x) : overdub(ctx, f, x)
 
     ISINTERESTING,
     GOTOIFNOTINTERESTING,
