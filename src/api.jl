@@ -1,18 +1,6 @@
 using StaticArrays: StaticArray, SMatrix, SVector
 using LinearAlgebra
 
-extract_diffresult(xs::AbstractArray{<:Number}) = xs
-# need to optimize
-extract_diffresult(xs) = hcat(xs...)'
-function extract_diffresult(xs::StaticArray{<:Any,<:StaticArray})
-    tup = reduce((x,y)->tuple(x..., y...), map(x->x.data, xs.data))
-    SMatrix{length(xs[1]), length(xs)}(tup)'
-end
-extract_diffresult(xs::AbstractMatrix{<:Number}) = xs'
-extract_diffresult(xs::AbstractVector{<:Number}) = xs'
-
-allpartials(xs) = map(partials, xs)
-
 function seed(v::SVector{N}) where N
     SMatrix{N,N,eltype(v)}(I)
 end
@@ -64,8 +52,43 @@ function Base.:*(dd::D{<:AbstractArray}, V::Union{AbstractArray,UniformScaling})
         dualarray = DualArray(dd.x, xx_partial)
         dd.f(dualarray)
     end
-    J = extract_diffresult(allpartials(J_dual))
-    return J
+
+    @show typeof(J_dual)
+    if J_dual isa Adjoint{<:Any,<:DualArray}
+        J_dual = DualArray{Tag{Nothing}}((J_dual').data', (J_dual').partials')
+    end
+
+    # TODO: fix
+    # julia> D(x -> @SVector[x[1],x[2],x[3]]', @SVector[1,2,3]) * I
+    # and handle Zero here, too
+    #  i.e D(x -> @SVector[1,2,3]', @SVector[1,2,3]) * I
+    if J_dual isa AbstractArray # Jacobian
+        if J_dual isa DualArray
+            return allpartials(J_dual)'
+        elseif J_dual isa StaticArray
+            return extract_diffresult(J_dual)
+        else
+            # `f: R^n -> R^m` so the Jacobian is `m × n`
+            J = similar(dd.x, length(J_dual), length(dd.x))
+            extract_diffresult!(J, J_dual)
+            return J
+        end
+    else # gradient
+        return partials(J_dual)'
+    end
+end
+
+function extract_diffresult(xs)
+    xs = map(partials, xs)
+    tup = reduce((x,y)->tuple(x..., y...), map(x->x.data, xs.data))
+    return SMatrix{length(xs[1]), length(xs)}(tup)'
+end
+
+function extract_diffresult!(J, ds::AbstractArray)
+    @inbounds for (d, i) in zip(ds, axes(J, 2))
+        J[i, :] .= partials(d)
+    end
+    return nothing
 end
 
 # pretty printing

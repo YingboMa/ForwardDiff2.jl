@@ -13,7 +13,10 @@ using LinearAlgebra
     @test D(sum, [1,2,3]) * I == ones(3)'
     # Jacobian
     @test D(x->@SVector([x[1]^x[2], x[3]^3, x[3]*x[2]*x[1]]), @SVector[1,2,3.]) * I === @SMatrix [2.0 0 0; 0 0 27; 6 3 2]
-    @test D(cumsum, @SVector([1,2,3])) * I == @SMatrix [1 0 0; 1 1 0; 1 1 1]
+    j2 = D(cumsum, @SVector([1,2,3])) * I
+    tj2 = @MMatrix [1 0 0; 1 1 0; 1 1 1]
+    @test j2 == tj2
+    @test typeof(j2) == typeof(tj2)
     @test D(cumsum, [1,2,3]) * I == [1 0 0; 1 1 0; 1 1 1]
     @test D(x->@SVector([x[1], x[2]]), @SVector([1,2,3])) * I === @SMatrix [1 0 0; 0 1 0]
     # Hessian
