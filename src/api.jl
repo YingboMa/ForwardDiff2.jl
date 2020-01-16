@@ -45,31 +45,28 @@ function Base.:*(dd::D{<:Number}, v::Number)
     return derivative
 end
 
+unwrap_adj(x::Union{Transpose,Adjoint}) = unwrap_adj(parent(x))
+unwrap_adj(x) = x
+
 function Base.:*(dd::D{<:AbstractArray}, V::Union{AbstractArray,UniformScaling})
     # always chunk
     xx_partial = V isa UniformScaling ? seed(dd.x) : V
-    J_dual = dualrun() do
+    duals = dualrun() do
         dualarray = DualArray(dd.x, xx_partial)
         dd.f(dualarray)
     end
 
-    @show typeof(J_dual)
-    if J_dual isa Adjoint{<:Any,<:DualArray}
-        J_dual = DualArray{Tag{Nothing}}((J_dual').data', (J_dual').partials')
-    end
+    J_dual = unwrap_adj(duals)
+    J_sz = (length(J_dual), length(dd.x))
 
-    # TODO: fix
-    # julia> D(x -> @SVector[x[1],x[2],x[3]]', @SVector[1,2,3]) * I
-    # and handle Zero here, too
-    #  i.e D(x -> @SVector[1,2,3]', @SVector[1,2,3]) * I
     if J_dual isa AbstractArray # Jacobian
         if J_dual isa DualArray
             return allpartials(J_dual)'
         elseif J_dual isa StaticArray
-            return extract_diffresult(J_dual)
+            return extract_diffresult(J_dual, J_sz)
         else
             # `f: R^n -> R^m` so the Jacobian is `m × n`
-            J = similar(dd.x, length(J_dual), length(dd.x))
+            J = similar(dd.x, J_sz)
             extract_diffresult!(J, J_dual)
             return J
         end
@@ -78,15 +75,25 @@ function Base.:*(dd::D{<:AbstractArray}, V::Union{AbstractArray,UniformScaling})
     end
 end
 
-function extract_diffresult(xs)
-    xs = map(partials, xs)
-    tup = reduce((x,y)->tuple(x..., y...), map(x->x.data, xs.data))
-    return SMatrix{length(xs[1]), length(xs)}(tup)'
+function extract_diffresult(xs, (m, n))
+    tup = mapreduce((x,y)->tuple(x..., y...), xs.data) do x
+        if x isa Zero
+            ntuple(_->false, n)
+        else
+            partials(x).data
+        end
+    end
+
+    return SMatrix{n, m}(tup)'
 end
 
 function extract_diffresult!(J, ds::AbstractArray)
     @inbounds for (d, i) in zip(ds, axes(J, 2))
-        J[i, :] .= partials(d)
+        if partials(d) isa Zero
+            J[i, :] .= false
+        else
+            J[i, :] .= partials(d)
+        end
     end
     return nothing
 end
