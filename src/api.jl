@@ -31,9 +31,13 @@ end
 
 ###
 ### Derivative object:
-###   D(f, x) * v computs df/dx * v
 ###
 
+"""
+    D(f, x)
+
+`D(f, x) * v` computes ``df/dx * v``
+"""
 struct D{T,F}
     f::F
     x::T

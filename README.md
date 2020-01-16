@@ -9,6 +9,8 @@
 
 User API:
 
+`D(f, x) * v` computes ``df/dx * v``
+
 ```julia
 julia> using ForwardDiff2: D; using LinearAlgebra
 
