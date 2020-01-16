@@ -1,5 +1,5 @@
 using StaticArrays: StaticArray, SMatrix, SVector
-using LinearAlgebra: I
+using LinearAlgebra
 
 extract_diffresult(xs::AbstractArray{<:Number}) = xs
 # need to optimize
@@ -29,35 +29,43 @@ function seed(v)
     return _seed.(Ref(vv), CartesianIndices((ax, ax)))
 end
 
-function D(f)
-    # grad
-    function deriv(arg::AbstractArray)
-        # always chunk
-        arg_partial = seed(arg)
-        darr = dualrun(()->DualArray(arg, arg_partial))
-        res = dualrun(()->f(darr))
-        diffres = extract_diffresult(allpartials(res))
-        return diffres
-    end
-    # scalar
-    function deriv(x)
-        dx = one(x)
-        res = dualrun() do
-            dualized = Dual(x, dx)
-            f(dualized)
-        end
-        return map(partials, res)
-    end
-    return deriv
+###
+### Derivative object:
+###   D(f, x) * v computs df/dx * v
+###
+
+struct D{T,F}
+    f::F
+    x::T
 end
 
-#=
-# scalar case: f: R -> something
-D(sin)(1.0)
-D(x->[x, x^2])(3)
+# WARNING: It assume that the number type is commutative
+Base.:*(v, dd::D{<:Number}) = dd * v
+function Base.:*(dd::D{<:Number}, v)
+    is_I = v isa UniformScaling
+    derivative_dual = dualrun() do
+        dual = Dual(dd.x, is_I ? v.λ : v)
+        dd.f(dual)
+    end
+    derivative = map(partials, derivative_dual)
+    is_I && (derivative *= I)
+    return derivative
+end
 
-# gradient case: f: R^n -> R
-D(sum)([1,2,3])
+function Base.:*(dd::D{<:AbstractArray}, II::UniformScaling)
+    # always chunk
+    xx_partial = seed(dd.x)
+    J_dual = dualrun() do
+        dualarray = DualArray(dd.x, xx_partial)
+        dd.f(dualarray)
+    end
+    J = extract_diffresult(allpartials(J_dual))
+    return isone(II.λ) ? J : J*II
+end
 
-# Jacobian case: f: R^n -> R^m
-=#
+# pretty printing
+function Base.show(io::IO, dd::D)
+    print(io, "D(", nameof(dd.f), ", ")
+    show(IOContext(io, :compact => true, :limit => true), dd.x)
+    print(io, ')')
+end
