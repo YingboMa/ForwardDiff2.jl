@@ -152,10 +152,10 @@ end
 
         return if ∂s isa Tuple
             map(val, ∂s) do v, ∂
-                Dual{Tag{T}}(v, ∂)
+                ∂ isa Zero ? v : Dual{Tag{T}}(v, ∂)
             end
         else
-            Dual{Tag{T}}(val, ∂s)
+            ∂s isa Zero ? val : Dual{Tag{T}}(val, ∂s)
         end
     end
 end

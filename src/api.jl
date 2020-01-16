@@ -44,27 +44,28 @@ struct D{T,F}
 end
 
 # WARNING: It assume that the number type is commutative
-Base.:*(v, dd::D{<:Number}) = dd * v
-function Base.:*(dd::D{<:Number}, v)
-    is_I = v isa UniformScaling
-    derivative_dual = dualrun() do
-        dual = Dual(dd.x, is_I ? v.λ : v)
-        dd.f(dual)
+Base.:*(v::Number, dd::D) = dd * v
+function Base.:*(dd::D{<:Number}, v::Number)
+    ps, derivative_dual = dualrun() do
+        dual = Dual(dd.x, v)
+        partials(dual), dd.f(dual)
     end
-    derivative = map(partials, derivative_dual)
-    is_I && (derivative *= I)
+    derivative = map(derivative_dual) do a
+        pa = partials(a)
+        pa isa Zero ? zero(ps) : pa
+    end
     return derivative
 end
 
-function Base.:*(dd::D{<:AbstractArray}, II::UniformScaling)
+function Base.:*(dd::D{<:AbstractArray}, V::Union{AbstractArray,UniformScaling})
     # always chunk
-    xx_partial = seed(dd.x)
+    xx_partial = V isa UniformScaling ? seed(dd.x) : V
     J_dual = dualrun() do
         dualarray = DualArray(dd.x, xx_partial)
         dd.f(dualarray)
     end
     J = extract_diffresult(allpartials(J_dual))
-    return isone(II.λ) ? J : J*II
+    return J
 end
 
 # pretty printing

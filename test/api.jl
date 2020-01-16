@@ -6,7 +6,6 @@ using LinearAlgebra
 
 @testset "Derivative, Gradient, Jacobian, and Hessian" begin
     @test D(sin, 1) * true === cos(1.0)
-    @test D(sin, 1) * I === cos(1.0) * I
     @test D(float, 1) * 1 === 1
     @test D(AbstractFloat, 1) * 1 === 1
     @test D(x->[x, x^2], 3) * 1 == [1, 6]
@@ -26,7 +25,6 @@ end
     simple_D = @inferred D(x->exp(x) + x^x + cos(x) + tan(x) + 2^x, 1)
     @inferred simple_D * 1
     @inferred simple_D * true
-    @inferred simple_D * I
 
     complicated_D = D(x->exp(x) + x^x + cos(x) + tan(x) + 2^x + log(cos(x)) + sec(pi*x) - angle(x) + one(x) / log1p(sin(x)), 1)
     # broken due to `Core._apply`
