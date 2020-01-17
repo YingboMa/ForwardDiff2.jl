@@ -9,12 +9,16 @@
 
 User API:
 
-`D(f)(x) * v` computes ``df/dx * v``
+`D(f)(x) * v` computes `df(x)/dx ⋅ v`.
+
+
+`DI(f)(x)` is a convenient function to compute the derivative, gradient or
+Jacobian of `f` at `x`.
 
 ```julia
 julia> using Random; Random.seed!(123);
 
-julia> using ForwardDiff2: D; using LinearAlgebra
+julia> using ForwardDiff2: D, DI; using LinearAlgebra
 
 julia> D(sin)(10) * 11 === cos(10) * 11
 true
@@ -35,7 +39,7 @@ julia> D(cumsum)(v) * I # Jacobian
  1.0  1.0  0.0
  1.0  1.0  1.0
 
-julia> D(x->D(prod)(x) * I)(v) * I # Hessian
+julia> DI(DI(prod))(v) # Hessian
 3×3 StaticArrays.SArray{Tuple{3,3},Float64,2,9} with indices SOneTo(3)×SOneTo(3):
  0.0       0.673959  0.940515
  0.673959  0.0       0.768448
@@ -61,7 +65,7 @@ julia> D(cumsum)(v) * I # Jacobian
                conj(1)      conj(identity(0))
  conj(identity(0) + 1)  conj(1 + identity(0))
 
-julia> D(x->D(prod)(x) * I)(v) * I # Hessian
+julia> DI(DI(prod))(v) # Hessian
 2×2 StaticArrays.SArray{Tuple{2,2},Operation,2,4} with indices SOneTo(2)×SOneTo(2):
  conj((identity(1) * identity(identity(0)) + v₁ * 0) + (identity(1) * identity(0) + v₂ * 0))  conj((identity(0) * identity(identity(0)) + v₁ * 0) + (identity(1) * identity(1) + v₂ * 0))
  conj((identity(1) * identity(1) + v₁ * 0) + (identity(identity(0)) * identity(0) + v₂ * 0))  conj((identity(0) * identity(1) + v₁ * 0) + (identity(identity(0)) * identity(1) + v₂ * 0))

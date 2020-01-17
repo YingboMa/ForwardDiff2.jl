@@ -22,9 +22,9 @@ end
 ###
 
 """
-    D(f, x)
+    D(f)
 
-`D(f)(x) * v` computes ``df/dx * v``
+`D(f)(x) * v` computes ``\\frac{df}{dx}(x) ⋅ v``
 """
 struct D{T,F}
     f::F
@@ -33,6 +33,25 @@ struct D{T,F}
     D(f) = new{Nothing,typeof(f)}(f, nothing)
     (dd::D{<:Nothing,F})(x::T) where {T,F} = new{T,F}(dd.f, x)
 end
+
+"""
+    DI(f)
+
+`DI(f)(x)` is a convenient function to compute the derivative, gradient or
+Jacobian of `f` at `x`.
+
+It is equivalent to
+
+```julia
+D(f)(x) * I
+```
+
+where `I` is the multiplicative identity of ``\\frac{df}{dx}(x)``.
+"""
+DI(f) = x->D(f)(x) * mul_identity(x)
+
+mul_identity(x::AbstractArray) = I
+mul_identity(x) = one(x)
 
 # WARNING: It assume that the number type is commutative
 Base.:*(v::Number, dd::D) = dd * v

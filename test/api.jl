@@ -1,5 +1,5 @@
 using Test
-using ForwardDiff2: D, ForwardDiff2
+using ForwardDiff2: D, DI, ForwardDiff2
 using StaticArrays
 using OrdinaryDiffEq, ForwardDiff
 using LinearAlgebra
@@ -12,6 +12,7 @@ using ModelingToolkit: @variables, Variable
     @test D(float)(1) * 1 === 1
     @test D(AbstractFloat)(1) * 1 === 1
     @test D(x->[x, x^2])(3) * 1 == [1, 6]
+    @test DI(DI(sin))(1) === -sin(1)
     # Gradient
     @test D(x->1)([1,2,3]) * I === false # zero
     @test D(sum)([1,2,3]) * I == ones(3)'
@@ -28,9 +29,9 @@ using ModelingToolkit: @variables, Variable
     @test dcumsum([1,2,3]) * I == [1 0 0; 1 1 0; 1 1 1]
     @test D(x->@SVector([x[1], x[2]]))(@SVector([1,2,3])) * I === @SMatrix [1 0 0; 0 1 0]
     # Hessian
-    dh = D(x -> D(x->x[1]^x[2] + x[3]^3 + x[3]*x[2]*x[1])(x) * I)
-    @test dh(@SVector[1,2,3]) * I === @SMatrix [2 4 2; 4 0 1; 2 1 18.]
-    @test dh([1,2,3]) * I == [2 4 2; 4 0 1; 2 1 18.]
+    dh = DI(DI(x->x[1]^x[2] + x[3]^3 + x[3]*x[2]*x[1]))
+    @test dh(@SVector[1,2,3]) === @SMatrix [2 4 2; 4 0 1; 2 1 18.]
+    @test dh([1,2,3]) == [2 4 2; 4 0 1; 2 1 18.]
 end
 
 @testset "Inference" begin
