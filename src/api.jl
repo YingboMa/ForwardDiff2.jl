@@ -69,7 +69,7 @@ function Base.:*(dd::D{<:AbstractArray}, V::Union{AbstractArray,UniformScaling})
             return extract_diffresult(J_dual, J_sz)
         else
             # `f: R^n -> R^m` so the Jacobian is `m × n`
-            J = similar(dd.x, J_sz)
+            J = similar(J_dual, valtype(eltype(J_dual)), J_sz)
             extract_diffresult!(J, J_dual)
             return J
         end
@@ -100,6 +100,9 @@ function extract_diffresult!(J, ds::AbstractArray)
     end
     return nothing
 end
+
+@inline Cassette.overdub(ctx::TaggedCtx, f::typeof(extract_diffresult!), args...) = f(args...)
+@inline Cassette.overdub(ctx::TaggedCtx, f::typeof(extract_diffresult), args...) = f(args...)
 
 # pretty printing
 function Base.show(io::IO, dd::D{T}) where T

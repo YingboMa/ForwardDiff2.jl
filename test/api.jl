@@ -3,6 +3,7 @@ using ForwardDiff2: D, ForwardDiff2
 using StaticArrays
 using OrdinaryDiffEq, ForwardDiff
 using LinearAlgebra
+using ModelingToolkit: @variables, Variable
 
 @testset "Derivative, Gradient, Jacobian, and Hessian" begin
     @test D(sin)(1) * true === cos(1.0)
@@ -62,4 +63,18 @@ end
 
 @testset "No perturbation confusion" begin
     @test D(x -> x * D(y -> x + y)(1))(1) * 1 === 1
+end
+
+@testset "Multivariable function with closure" begin
+    x = [3, 5.0]
+    p = [0.1, 0.2]
+    g(x, p) = [sin(x[1])*p[2], tan(p[1]*x[1])]
+
+    num_fd2 = ForwardDiff2.D(p->(ForwardDiff2.D(x->g(x, p))(x) * I))(p) * I
+    num_fd = ForwardDiff.jacobian(p->ForwardDiff.jacobian(x->g(x, p), x), [0.1, 0.2])
+    @test num_fd2 == num_fd
+
+    @variables x[1:2] p[1:2]
+    g(x, p) = [sin(x[1])*p[2], tan(p[1]*x[1])]
+    @test_nowarn ForwardDiff2.D(p->(ForwardDiff2.D(x->g(x, p))(x) * I))(p) * I
 end
