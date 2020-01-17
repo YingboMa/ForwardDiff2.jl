@@ -24,12 +24,16 @@ end
 """
     D(f, x)
 
-`D(f, x) * v` computes ``df/dx * v``
+`D(f)(x) * v` computes ``df/dx * v``
 """
 struct D{T,F}
     f::F
     x::T
+
+    D(f) = new{Nothing,typeof(f)}(f, nothing)
+    (dd::D{<:Nothing,F})(x::T) where {T,F} = new{T,F}(dd.f, x)
 end
+
 
 # WARNING: It assume that the number type is commutative
 Base.:*(v::Number, dd::D) = dd * v
@@ -99,8 +103,12 @@ function extract_diffresult!(J, ds::AbstractArray)
 end
 
 # pretty printing
-function Base.show(io::IO, dd::D)
-    print(io, "D(", nameof(dd.f), ", ")
-    show(IOContext(io, :compact => true, :limit => true), dd.x)
-    print(io, ')')
+function Base.show(io::IO, dd::D{T}) where T
+    print(io, "D(", nameof(dd.f), ')')
+    if !(T <: Nothing)
+        print(io, '(')
+        show(IOContext(io, :compact => true, :limit => true), dd.x)
+        print(io, ')')
+    end
+    return nothing
 end
