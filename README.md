@@ -9,7 +9,7 @@
 
 User API:
 
-`D(f, x) * v` computes ``df/dx * v``
+`D(f)(x) * v` computes ``df/dx * v``
 
 ```julia
 julia> using Random; Random.seed!(123);

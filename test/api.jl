@@ -6,13 +6,19 @@ using LinearAlgebra
 using ModelingToolkit: @variables, Variable
 
 @testset "Derivative, Gradient, Jacobian, and Hessian" begin
+    # Derivative
+    @test D(x->1)(1) * true === false # zero
     @test D(sin)(1) * true === cos(1.0)
     @test D(float)(1) * 1 === 1
     @test D(AbstractFloat)(1) * 1 === 1
     @test D(x->[x, x^2])(3) * 1 == [1, 6]
     # Gradient
+    @test D(x->1)([1,2,3]) * I === false # zero
     @test D(sum)([1,2,3]) * I == ones(3)'
     # Jacobian
+    zero_J = D(x->[1,1,1])([1,2,3]) * I # zero
+    @test eltype(zero_J) === Int
+    @test zero_J == zeros(Int, 3, 3)
     @test D(x->@SVector([x[1]^x[2], x[3]^3, x[3]*x[2]*x[1]]))(@SVector[1,2,3.]) * I === @SMatrix [2.0 0 0; 0 0 27; 6 3 2]
     dcumsum = D(cumsum)
     j2 = dcumsum(@SVector([1,2,3])) * I

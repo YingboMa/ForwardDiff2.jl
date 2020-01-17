@@ -74,7 +74,8 @@ function Base.:*(dd::D{<:AbstractArray}, V::Union{AbstractArray,UniformScaling})
             return J
         end
     else # gradient
-        return partials(J_dual)'
+        ps = partials(J_dual)
+        return ps isa Zero ? zero(eltype(V)) : ps'
     end
 end
 
