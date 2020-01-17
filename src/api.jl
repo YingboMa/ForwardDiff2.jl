@@ -34,7 +34,6 @@ struct D{T,F}
     (dd::D{<:Nothing,F})(x::T) where {T,F} = new{T,F}(dd.f, x)
 end
 
-
 # WARNING: It assume that the number type is commutative
 Base.:*(v::Number, dd::D) = dd * v
 function Base.:*(dd::D{<:Number}, v::Number)

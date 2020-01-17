@@ -12,29 +12,34 @@ User API:
 `D(f, x) * v` computes ``df/dx * v``
 
 ```julia
+julia> using Random; Random.seed!(123);
+
 julia> using ForwardDiff2: D; using LinearAlgebra
 
-julia> D(sin, 10) * 11 === cos(10) * 11
+julia> D(sin)(10) * 11 === cos(10) * 11
 true
 
-julia> v = rand(2)
-2-element Array{Float64,1}:
- 0.03215572910208908
- 0.0939539318769742
+julia> v = rand(3)
+3-element Array{Float64,1}:
+ 0.7684476751965699
+ 0.940515000715187
+ 0.6739586945680673
 
-julia> D(prod, v) * I # gradient
-1×2 Adjoint{Float64,SArray{Tuple{2},Float64,1,2}} with indices SOneTo(1)×SOneTo(2):
- 0.0939539  0.0321557
+julia> D(prod)(v) * I # gradient
+1×3 Adjoint{Float64,StaticArrays.SArray{Tuple{3},Float64,1,3}} with indices SOneTo(1)×SOneTo(3):
+ 0.633868  0.517902  0.722737
 
-julia> D(cumsum, v) * I # Jacobian
-2×2 Adjoint{Float64,Array{Float64,2}}:
- 1.0  0.0
- 1.0  1.0
+julia> D(cumsum)(v) * I # Jacobian
+3×3 Adjoint{Float64,Array{Float64,2}}:
+ 1.0  0.0  0.0
+ 1.0  1.0  0.0
+ 1.0  1.0  1.0
 
-julia> D(x->D(prod, x) * I, v) * I # Hessian
-2×2 SArray{Tuple{2,2},Float64,2,4} with indices SOneTo(2)×SOneTo(2):
- 0.0  1.0
- 1.0  0.0
+julia> D(x->D(prod)(x) * I)(v) * I # Hessian
+3×3 StaticArrays.SArray{Tuple{3,3},Float64,2,9} with indices SOneTo(3)×SOneTo(3):
+ 0.0       0.673959  0.940515
+ 0.673959  0.0       0.768448
+ 0.940515  0.768448  0.0
 ```
 
 Note that `ForwardDiff2.jl` also works with `ModelingToolkit.jl`:
@@ -44,22 +49,22 @@ julia> using ModelingToolkit
 julia> @variables v[1:2]
 (Operation[v₁, v₂],)
 
-julia> D(sin, v[1]) * 11
+julia> D(sin)(v[1]) * 11
 cos(v₁) * 11
 
-julia> D(prod, v) * I # gradient
-1×2 Adjoint{Operation,SArray{Tuple{2},Operation,1,2}} with indices SOneTo(1)×SOneTo(2):
+julia> D(prod)(v) * I # gradient
+1×2 Adjoint{Operation,StaticArrays.SArray{Tuple{2},Operation,1,2}} with indices SOneTo(1)×SOneTo(2):
  conj(identity(1) * v₂ + v₁ * identity(0))  conj(identity(0) * v₂ + v₁ * 1)
 
-julia> D(cumsum, v) * I # Jacobian
+julia> D(cumsum)(v) * I # Jacobian
 2×2 Adjoint{Operation,Array{Expression,2}}:
                conj(1)      conj(identity(0))
  conj(identity(0) + 1)  conj(1 + identity(0))
 
-julia> D(x->D(prod, x) * I, v) * I # Hessian
-2×2 SArray{Tuple{2,2},Operation,2,4} with indices SOneTo(2)×SOneTo(2):
- conj((identity(1) * identity(identity(0)) + v₁ * 0) + (identity(1) * identity(0) + v₂ * 0))  …  conj((identity(0) * identity(identity(0)) + v₁ * 0) + (identity(1) * identity(1) + v₂ * 0))
- conj((identity(1) * identity(1) + v₁ * 0) + (identity(identity(0)) * identity(0) + v₂ * 0))     conj((identity(0) * identity(1) + v₁ * 0) + (identity(identity(0)) * identity(1) + v₂ * 0))
+julia> D(x->D(prod)(x) * I)(v) * I # Hessian
+2×2 StaticArrays.SArray{Tuple{2,2},Operation,2,4} with indices SOneTo(2)×SOneTo(2):
+ conj((identity(1) * identity(identity(0)) + v₁ * 0) + (identity(1) * identity(0) + v₂ * 0))  conj((identity(0) * identity(identity(0)) + v₁ * 0) + (identity(1) * identity(1) + v₂ * 0))
+ conj((identity(1) * identity(1) + v₁ * 0) + (identity(identity(0)) * identity(0) + v₂ * 0))  conj((identity(0) * identity(1) + v₁ * 0) + (identity(identity(0)) * identity(1) + v₂ * 0))
 ```
 
 Planned features:
