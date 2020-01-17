@@ -91,7 +91,7 @@ function extract_diffresult(xs, (m, n))
 end
 
 function extract_diffresult!(J, ds::AbstractArray)
-    @inbounds for (d, i) in zip(ds, axes(J, 2))
+    @inbounds for (d, i) in zip(ds, axes(J, 1))
         if partials(d) isa Zero
             J[i, :] .= false
         else
