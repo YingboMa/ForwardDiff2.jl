@@ -8,27 +8,42 @@
 ### Warning!!!: This package is still work-in-progress
 
 User API:
+
+`D(f)(x) * v` computes `df(x)/dx ⋅ v`.
+
+
+`DI(f)(x)` is a convenient function to compute the derivative, gradient or
+Jacobian of `f` at `x`.
+
 ```julia
-julia> using ForwardDiff2: D
+julia> using Random; Random.seed!(123);
 
-julia> v = rand(2)
-2-element Array{Float64,1}:
- 0.22260830987887537
- 0.6397089507287486
+julia> using ForwardDiff2: D, DI; using LinearAlgebra
 
-julia> D(prod)(v) # gradient
-1×2 LinearAlgebra.Adjoint{Float64,Array{Float64,1}}:
- 0.639709  0.222608
+julia> D(sin)(10) * 11 === cos(10) * 11
+true
 
-julia> D(cumsum)(v) # Jacobian
-2×2 Array{Float64,2}:
- 1.0  0.0
- 1.0  1.0
+julia> v = rand(3)
+3-element Array{Float64,1}:
+ 0.7684476751965699
+ 0.940515000715187
+ 0.6739586945680673
 
-julia> D(D(prod))(v) # Hessian
-2×2 LinearAlgebra.Adjoint{Float64,Array{Float64,2}}:
- 0.0  1.0
- 1.0  0.0
+julia> D(prod)(v) * I # gradient
+1×3 Adjoint{Float64,StaticArrays.SArray{Tuple{3},Float64,1,3}} with indices SOneTo(1)×SOneTo(3):
+ 0.633868  0.517902  0.722737
+
+julia> D(cumsum)(v) * I # Jacobian
+3×3 Adjoint{Float64,Array{Float64,2}}:
+ 1.0  0.0  0.0
+ 1.0  1.0  0.0
+ 1.0  1.0  1.0
+
+julia> DI(DI(prod))(v) # Hessian
+3×3 StaticArrays.SArray{Tuple{3,3},Float64,2,9} with indices SOneTo(3)×SOneTo(3):
+ 0.0       0.673959  0.940515
+ 0.673959  0.0       0.768448
+ 0.940515  0.768448  0.0
 ```
 
 Note that `ForwardDiff2.jl` also works with `ModelingToolkit.jl`:
@@ -38,19 +53,22 @@ julia> using ModelingToolkit
 julia> @variables v[1:2]
 (Operation[v₁, v₂],)
 
-julia> D(prod)(v) # gradient
-1×2 LinearAlgebra.Adjoint{Operation,Array{Operation,1}}:
- conj(1v₂ + v₁ * identity(0))  conj(identity(0) * v₂ + v₁ * 1)
+julia> D(sin)(v[1]) * 11
+cos(v₁) * 11
 
-julia> D(cumsum)(v) # Jacobian
-2×2 Array{Expression,2}:
-     Constant(1)      identity(0)
- identity(0) + 1  1 + identity(0)
+julia> D(prod)(v) * I # gradient
+1×2 Adjoint{Operation,StaticArrays.SArray{Tuple{2},Operation,1,2}} with indices SOneTo(1)×SOneTo(2):
+ conj(identity(1) * v₂ + v₁ * identity(0))  conj(identity(0) * v₂ + v₁ * 1)
 
-julia> D(D(prod))(v) # Hessian
-2×2 LinearAlgebra.Adjoint{Operation,Array{Operation,2}}:
- conj((1 * identity(0) + v₁ * 0) + (1 * identity(0) + v₂ * 0))  conj((identity(0) * identity(0) + v₁ * 0) + (1 * 1 + v₂ * 0))
- conj((1 * 1 + v₁ * 0) + (identity(0) * identity(0) + v₂ * 0))  conj((identity(0) * 1 + v₁ * 0) + (identity(0) * 1 + v₂ * 0))
+julia> D(cumsum)(v) * I # Jacobian
+2×2 Adjoint{Operation,Array{Expression,2}}:
+               conj(1)      conj(identity(0))
+ conj(identity(0) + 1)  conj(1 + identity(0))
+
+julia> DI(DI(prod))(v) # Hessian
+2×2 StaticArrays.SArray{Tuple{2,2},Operation,2,4} with indices SOneTo(2)×SOneTo(2):
+ conj((identity(1) * identity(identity(0)) + v₁ * 0) + (identity(1) * identity(0) + v₂ * 0))  conj((identity(0) * identity(identity(0)) + v₁ * 0) + (identity(1) * identity(1) + v₂ * 0))
+ conj((identity(1) * identity(1) + v₁ * 0) + (identity(identity(0)) * identity(0) + v₂ * 0))  conj((identity(0) * identity(1) + v₁ * 0) + (identity(identity(0)) * identity(1) + v₂ * 0))
 ```
 
 Planned features:

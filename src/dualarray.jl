@@ -48,14 +48,22 @@ end
 
 Base.size(d::DualArray) = size(data(d))
 Base.IndexStyle(d::DualArray) = Base.IndexStyle(data(d))
+
 # Having `Union{}` in `similar` usually means some people did unholy things
 # like `promote_op`, and they should stop.
 Base.similar(d::DualArray, ::Type{<:Union{}}, dims::Dims) = similar(d, eltype(d), dims)
+Base.similar(d::DualArray, ::Type{<:Union{}}) = similar(d, eltype(d))
 function Base.similar(d::DualArray{T,N}, ::Type{<:Dual{T,V,P}}, dims::Dims) where {T,N,V,P}
     new_data = similar(data(d), V, dims)
     new_partials = similar(allpartials(d), eltype(P), (N, reverse(dims)...))
     return DualArray{T,N}(new_data, new_partials)
 end
+function Base.similar(d::DualArray{T,N}, ::Type{<:Dual{T,V,P}}) where {T,N,V,P}
+    new_data = similar(data(d), V)
+    new_partials = similar(allpartials(d), eltype(P))
+    return DualArray{T,N}(new_data, new_partials)
+end
+
 Base.eachindex(d::DualArray) = eachindex(data(d))
 Base.copy(d::DualArray{T,N}) where {T,N} = DualArray{T,N}(copy(data(d)), copy(allpartials(d)))
 

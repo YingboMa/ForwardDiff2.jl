@@ -1,17 +1,5 @@
 using StaticArrays: StaticArray, SMatrix, SVector
-using LinearAlgebra: I
-
-extract_diffresult(xs::AbstractArray{<:Number}) = xs
-# need to optimize
-extract_diffresult(xs) = hcat(xs...)'
-function extract_diffresult(xs::StaticArray{<:Any,<:StaticArray})
-    tup = reduce((x,y)->tuple(x..., y...), map(x->x.data, xs.data))
-    SMatrix{length(xs[1]), length(xs)}(tup)'
-end
-extract_diffresult(xs::AbstractMatrix{<:Number}) = xs'
-extract_diffresult(xs::AbstractVector{<:Number}) = xs'
-
-allpartials(xs) = map(partials, xs)
+using LinearAlgebra
 
 function seed(v::SVector{N}) where N
     SMatrix{N,N,eltype(v)}(I)
@@ -29,35 +17,120 @@ function seed(v)
     return _seed.(Ref(vv), CartesianIndices((ax, ax)))
 end
 
-function D(f)
-    # grad
-    function deriv(arg::AbstractArray)
-        # always chunk
-        arg_partial = seed(arg)
-        darr = dualrun(()->DualArray(arg, arg_partial))
-        res = dualrun(()->f(darr))
-        diffres = extract_diffresult(allpartials(res))
-        return diffres
-    end
-    # scalar
-    function deriv(x)
-        dx = one(x)
-        res = dualrun() do
-            dualized = Dual(x, dx)
-            f(dualized)
-        end
-        return map(partials, res)
-    end
-    return deriv
+###
+### Derivative object:
+###
+
+"""
+    D(f)
+
+`D(f)(x) * v` computes ``\\frac{df}{dx}(x) ⋅ v``
+"""
+struct D{T,F}
+    f::F
+    x::T
+
+    D(f) = new{Nothing,typeof(f)}(f, nothing)
+    (dd::D{<:Nothing,F})(x::T) where {T,F} = new{T,F}(dd.f, x)
 end
 
-#=
-# scalar case: f: R -> something
-D(sin)(1.0)
-D(x->[x, x^2])(3)
+"""
+    DI(f)
 
-# gradient case: f: R^n -> R
-D(sum)([1,2,3])
+`DI(f)(x)` is a convenient function to compute the derivative, gradient or
+Jacobian of `f` at `x`.
 
-# Jacobian case: f: R^n -> R^m
-=#
+It is equivalent to
+
+```julia
+D(f)(x) * I
+```
+
+where `I` is the multiplicative identity of ``\\frac{df}{dx}(x)``.
+"""
+DI(f) = x->D(f)(x) * mul_identity(x)
+
+mul_identity(x::AbstractArray) = I
+mul_identity(x) = one(x)
+
+# WARNING: It assume that the number type is commutative
+Base.:*(v::Number, dd::D) = dd * v
+function Base.:*(dd::D{<:Number}, v::Number)
+    ps, derivative_dual = dualrun() do
+        dual = Dual(dd.x, v)
+        partials(dual), dd.f(dual)
+    end
+    derivative = map(derivative_dual) do a
+        pa = partials(a)
+        pa isa Zero ? zero(ps) : pa
+    end
+    return derivative
+end
+
+unwrap_adj(x::Union{Transpose,Adjoint}) = unwrap_adj(parent(x))
+unwrap_adj(x) = x
+
+function Base.:*(dd::D{<:AbstractArray}, V::Union{AbstractArray,UniformScaling})
+    # always chunk
+    xx_partial = V isa UniformScaling ? seed(dd.x) : V
+    duals = dualrun() do
+        dualarray = DualArray(dd.x, xx_partial)
+        dd.f(dualarray)
+    end
+
+    J_dual = unwrap_adj(duals)
+    J_sz = (length(J_dual), length(dd.x))
+
+    if J_dual isa AbstractArray # Jacobian
+        if J_dual isa DualArray
+            return allpartials(J_dual)'
+        elseif J_dual isa StaticArray
+            return extract_diffresult(J_dual, J_sz)
+        else
+            # `f: R^n -> R^m` so the Jacobian is `m × n`
+            J = similar(J_dual, valtype(eltype(J_dual)), J_sz)
+            extract_diffresult!(J, J_dual)
+            return J
+        end
+    else # gradient
+        ps = partials(J_dual)
+        return ps isa Zero ? zero(eltype(V)) : ps'
+    end
+end
+
+function extract_diffresult(xs, (m, n))
+    tup = mapreduce((x,y)->tuple(x..., y...), xs.data) do x
+        if x isa Zero
+            ntuple(_->false, n)
+        else
+            partials(x).data
+        end
+    end
+
+    return SMatrix{n, m}(tup)'
+end
+
+function extract_diffresult!(J, ds::AbstractArray)
+    @inbounds for (d, i) in zip(ds, axes(J, 1))
+        if partials(d) isa Zero
+            J[i, :] .= false
+        else
+            J[i, :] .= partials(d)
+        end
+    end
+    return nothing
+end
+
+@inline Cassette.overdub(ctx::TaggedCtx, f::typeof(extract_diffresult!), args...) = f(args...)
+@inline Cassette.overdub(ctx::TaggedCtx, f::typeof(extract_diffresult), args...) = f(args...)
+
+# pretty printing
+function Base.show(io::IO, dd::D{T}) where T
+    print(io, "D(", nameof(dd.f), ')')
+    if !(T <: Nothing)
+        print(io, '(')
+        show(IOContext(io, :compact => true, :limit => true), dd.x)
+        print(io, ')')
+    end
+    return nothing
+end

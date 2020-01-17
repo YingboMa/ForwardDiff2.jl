@@ -35,15 +35,3 @@ end
     @test find_dual_ctx(ctx, Dual{Tag1}(1,1), Dual{Tag2}(1,1)) == 2
     @test find_dual_ctx(ctx, Dual{Tag2}(1,1), Dual{Tag1}(1,1)) == 1
 end
-
-function D(f, x)
-    dualrun() do
-        xx = Dual(x, one(x))
-        partials(f(xx))
-    end
-end
-
-
-@testset "nested differentiation" begin
-    @test D(x -> x * D(y -> x + y, 1), 1) === 1
-end

@@ -88,7 +88,7 @@ dualtag() = nothing
 @inline valtype(::Type{Dual{T,V,P}}) where {T,V,P} = V
 
 @inline partials(d::Dual) = d.partials
-
+@inline partials(d::Number) = Zero()
 @inline npartials(d::Dual) = (ps = partials(d)) isa ChainRulesCore.AbstractDifferential ? 1 : length(d.partials)
 
 #####################

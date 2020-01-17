@@ -2,6 +2,7 @@ using Test
 using Random
 using ForwardDiff2
 using ForwardDiff2: Dual, Tag, value, partials, dualrun
+using ChainRulesCore: Zero
 
 using StaticArrays
 
@@ -66,6 +67,15 @@ dual3(primal, partial) = dualrun(()->dual2(primal, partial))
 
 _mul_partials(p1, p2, v1, v2) = p1 * v1 + p2 * v2
 _div_partials(a, b, aval, bval) = _mul_partials(a, b, inv(bval), -(aval / (bval*bval)))
+
+function approx_dtest(x, y)
+    x = partials(x)
+    if x isa Zero
+        @test iszero(y)
+    else
+        @dtest x[1] ≈ y
+    end
+end
 
 const Partials{N,V} = SVector{N,V}
 
@@ -339,8 +349,8 @@ for N in (3), M in (4), V in (Int, Float32, Float64)
     @test @drun1(PRIMAL * FDNUM) === Dual{Tag1}(value(FDNUM) * PRIMAL, partials(FDNUM) * PRIMAL)
 
     @test @drun2(NESTED_FDNUM * NESTED_FDNUM2) === @drun1 Dual{Tag2}(value(NESTED_FDNUM) * value(NESTED_FDNUM2), _mul_partials(partials(NESTED_FDNUM), partials(NESTED_FDNUM2), value(NESTED_FDNUM2), value(NESTED_FDNUM)))
-    @test_broken @drun2(NESTED_FDNUM * PRIMAL) === @drun1 Dual{Tag2}(value(NESTED_FDNUM) * PRIMAL, partials(NESTED_FDNUM) * PRIMAL)
-    @test_broken @drun2(PRIMAL * NESTED_FDNUM) === @drun1 Dual{Tag2}(value(NESTED_FDNUM) * PRIMAL, partials(NESTED_FDNUM) * PRIMAL)
+    @test @drun2(NESTED_FDNUM * PRIMAL) === @drun1 Dual{Tag2}(value(NESTED_FDNUM) * PRIMAL, partials(NESTED_FDNUM) * PRIMAL)
+    @test @drun2(PRIMAL * NESTED_FDNUM) === @drun1 Dual{Tag2}(value(NESTED_FDNUM) * PRIMAL, partials(NESTED_FDNUM) * PRIMAL)
 
     # Division #
     #----------#
@@ -362,7 +372,7 @@ for N in (3), M in (4), V in (Int, Float32, Float64)
     @test dual_isapprox(@drun1(PRIMAL / FDNUM), dual1(PRIMAL / value(FDNUM), (-(PRIMAL) / value(FDNUM)^2) * partials(FDNUM)))
 
     @test dual_isapprox(@drun2(NESTED_FDNUM / NESTED_FDNUM2), @drun1 Dual{Tag2}(value(NESTED_FDNUM) / value(NESTED_FDNUM2), _div_partials(partials(NESTED_FDNUM), partials(NESTED_FDNUM2), value(NESTED_FDNUM), value(NESTED_FDNUM2))))
-    @test_broken dual_isapprox(@drun2(NESTED_FDNUM / PRIMAL), @drun1 Dual{Tag2}(value(NESTED_FDNUM) / PRIMAL, partials(NESTED_FDNUM) / PRIMAL))
+    @test dual_isapprox(@drun2(NESTED_FDNUM / PRIMAL), @drun1 Dual{Tag2}(value(NESTED_FDNUM) / PRIMAL, partials(NESTED_FDNUM) / PRIMAL))
     @test dual_isapprox(@drun2(PRIMAL / NESTED_FDNUM), @drun1 Dual{Tag2}(PRIMAL / value(NESTED_FDNUM), (-(PRIMAL) / value(NESTED_FDNUM)^2) * partials(NESTED_FDNUM)))
 
     # Exponentiation #
@@ -390,11 +400,8 @@ for N in (3), M in (4), V in (Int, Float32, Float64)
 
     @dtest abs(-FDNUM) === FDNUM
     @dtest abs(FDNUM) === FDNUM
-    # gives `Union{}` type
-    @test_broken @drun2 abs(-NESTED_FDNUM) === NESTED_FDNUM
-    @test_broken @drun2 abs(NESTED_FDNUM) === NESTED_FDNUM
-    @test @drun2 abs(-NESTED_FDNUM) == NESTED_FDNUM
-    @test @drun2 abs(NESTED_FDNUM) == NESTED_FDNUM
+    @test @drun2 abs(-NESTED_FDNUM) === NESTED_FDNUM
+    @test @drun2 abs(NESTED_FDNUM) === NESTED_FDNUM
 
     if V != Int
         for (M, f, arity) in DiffRules.diffrules()
@@ -407,7 +414,7 @@ for N in (3), M in (4), V in (Int, Float32, Float64)
                     x = rand() + $modifier
                     dx = dualrun(()->$M.$f(Dual(x, one(x))))
                     @dtest value(dx) == $M.$f(x)
-                    @dtest partials(dx)[1] ≈ $deriv
+                    approx_dtest(dx, $deriv)
                 end
             elseif arity == 2
                 derivs = DiffRules.diffrule(M, f, :x, :y)
@@ -422,12 +429,12 @@ for N in (3), M in (4), V in (Int, Float32, Float64)
                     if isnan(actualdx)
                         @dtest isnan(partials(dx)[1])
                     else
-                        @dtest partials(dx)[1] ≈ actualdx
+                        approx_dtest(dx, actualdx)
                     end
                     if isnan(actualdy)
                         @dtest isnan(partials(dy)[1])
                     else
-                        @dtest partials(dy)[1] ≈ actualdy
+                        approx_dtest(dy, actualdy)
                     end
                 end
             end
