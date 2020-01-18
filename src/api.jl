@@ -73,6 +73,7 @@ unwrap_adj(x) = x
 function Base.:*(dd::D{<:AbstractArray}, V::Union{AbstractArray,UniformScaling})
     # always chunk
     xx_partial = V isa UniformScaling ? seed(dd.x) : V
+    checkinput(dd.x, V)
     duals = dualrun() do
         dualarray = DualArray(dd.x, xx_partial)
         dd.f(dualarray)
@@ -100,6 +101,10 @@ function Base.:*(dd::D{<:AbstractArray}, V::Union{AbstractArray,UniformScaling})
         return ps isa Zero ? zero(eltype(V)) : ps'
     end
 end
+
+@noinline throwinput() = throw(ArgumentError("In `D(f)(x) * v`, `x` and `v` must have the same axes."))
+checkinput(x, v) = (all(i->axes(x, i) == axes(v, i), 1:ndims(x)) || throwinput(); nothing)
+checkinput(_, ::UniformScaling) = nothing
 
 function extract_diffresult(xs, mn::Tuple)
     isjvp = mn isa Tuple{<:Integer}

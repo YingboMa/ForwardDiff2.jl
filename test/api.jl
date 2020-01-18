@@ -13,9 +13,11 @@ using ModelingToolkit: @variables, Variable
     @test D(AbstractFloat)(1) * 1 === 1
     @test D(x->[x, x^2])(3) * 1 == [1, 6]
     @test DI(DI(sin))(1) === -sin(1)
+
     # Gradient
     @test D(x->1)([1,2,3]) * I === false # zero
     @test D(sum)([1,2,3]) * I == ones(3)'
+
     # Jacobian
     zero_J = D(x->[1,1,1])([1,2,3]) * I # zero
     @test eltype(zero_J) === Int
@@ -33,8 +35,10 @@ using ModelingToolkit: @variables, Variable
     jvp2 = dcumsum([1,2,3]) * @SVector [1, 2, 3]
     @test jvp2 isa MVector{3,Int}
     @test jvp2 == [1, 3, 6]
+    @test_throws ArgumentError dcumsum([1,2,3]) * [1, 2]
     @test D(x->@SVector([x[1], x[2]]))(@SVector([1,2,3])) * I === @SMatrix [1 0 0; 0 1 0]
     @test D(x->@SVector([x[1], x[2]]))(@SVector([1,2,3])) * @SVector([1, 2, 3]) === @SVector [1, 2]
+
     # Hessian
     dh = D(DI(x->x[1]^x[2] + x[3]^3 + x[3]*x[2]*x[1]))
     @test dh(@SVector[1,2,3]) * I === @SMatrix [2 4 2; 4 0 1; 2 1 18.0]
