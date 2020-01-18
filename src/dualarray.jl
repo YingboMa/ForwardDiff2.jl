@@ -5,7 +5,8 @@ Base.:+(x::StaticArray) = x
 struct DualArray{T,N,V<:AbstractArray,D<:AbstractArray,E,M} <: AbstractArray{E,M}
     data::V
     partials::D
-    # ndims(data) + 1 == ndims(partials)
+    # ndims(data) + 1 == ndims(partials) when chunking
+    # ndims(data) == ndims(partials) when computing Jacobian-vector multiply
     function DualArray{T,N}(v, p) where {T,N}
         # only use SVector for now
         V, D = typeof(v), typeof(p)
@@ -16,7 +17,12 @@ struct DualArray{T,N,V<:AbstractArray,D<:AbstractArray,E,M} <: AbstractArray{E,M
     end
 end
 
-DualArray{T}(v, p) where {T} = (N = size(p, ndims(p)); DualArray{T,N}(v, p))
+isjvp(v, p) = ndims(v) === ndims(p)
+isjvp(d::DualArray) = isjvp(data(d), allpartials(d))
+function DualArray{T}(v, p) where {T}
+    N = isjvp(v, p) ? 1 : size(p, ndims(p))
+    return DualArray{T,N}(v, p)
+end
 DualArray(a::AbstractArray, b::AbstractArray) = DualArray{typeof(dualtag())}(a, b)
 data(d::DualArray) = d.data
 allpartials(d::DualArray) = d.partials
@@ -76,13 +82,17 @@ partial_type(::Type{Dual{T,V,P}}) where {T,V,P} = P
 Base.@propagate_inbounds function Base.getindex(d::DualArray{T}, i::Int...) where {T}
     ps = allpartials(d)
     P = partial_type(eltype(d))
-    partials_tuple = ntuple(j->ps[j, i...], Val(npartials(d)))
-    return Dual{T}(data(d)[i...], P(partials_tuple))
+    partials_ = isjvp(d) ? ps[i...] : ntuple(j->ps[j, i...], Val(npartials(d)))
+    return Dual{T}(data(d)[i...], P(partials_))
 end
 
 Base.@propagate_inbounds function Base.setindex!(d::DualArray{T}, dual::Dual{T}, i::Int...) where {T}
     data(d)[i...] = value(dual)
-    allpartials(d)[:, i...] .= partials(dual)
+    if isjvp(d)
+        allpartials(d)[i...] = first(partials(dual))
+    else
+        allpartials(d)[:, i...] .= partials(dual)
+    end
     return dual
 end
 
