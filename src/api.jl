@@ -71,9 +71,8 @@ unwrap_adj(x::Union{Transpose,Adjoint}) = unwrap_adj(parent(x))
 unwrap_adj(x) = x
 
 function Base.:*(dd::D{<:AbstractArray}, V::Union{AbstractArray,UniformScaling})
-    # always chunk
-    xx_partial = V isa UniformScaling ? seed(dd.x) : V
     checkinput(dd.x, V)
+    xx_partial = V isa UniformScaling ? seed(dd.x) : V
     duals = dualrun() do
         dualarray = DualArray(dd.x, xx_partial)
         dd.f(dualarray)
