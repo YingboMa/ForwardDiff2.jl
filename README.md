@@ -8,11 +8,12 @@
 ### Warning!!!: This package is still work-in-progress
 
 User API:
+`D(f)(x)` returns a lazy representation of the derivative. 
 
-`D(f)(x) * v` computes `df(x)/dx ⋅ v`.
+`D(f)(x) * v` computes `df(x)/dx ⋅ v`, taking advantage of the laziness in `D(f)(x)`. 
 
 
-`DI(f)(x)` is a convenient function to compute the derivative, gradient or
+`DI(f)(x)` is a convenience function to materialize the derivative, gradient or
 Jacobian of `f` at `x`.
 
 ```julia
@@ -28,8 +29,11 @@ julia> v = rand(3)
  0.7684476751965699
  0.940515000715187
  0.6739586945680673
+ 
+ julia> D(prod)(v) # lazy gradient
+ D(prod)([0.768448, 0.940515, 0.673959])
 
-julia> D(prod)(v) * I # gradient
+julia> D(prod)(v) * I # materialize the gradient by multiplying by I
 1×3 Adjoint{Float64,StaticArrays.SArray{Tuple{3},Float64,1,3}} with indices SOneTo(1)×SOneTo(3):
  0.633868  0.517902  0.722737
 
