@@ -14,7 +14,7 @@ User API:
 
 
 `DI(f)(x)` is a convenience function to materialize the derivative, gradient or
-Jacobian of `f` at `x`.
+Jacobian of `f` at `x`. Equivalent to D(f)(x) * I
 
 ```julia
 julia> using Random; Random.seed!(123);
