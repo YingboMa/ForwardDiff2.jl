@@ -72,7 +72,7 @@ unwrap_adj(x) = x
 
 function Base.:*(dd::D{<:AbstractArray}, V::Union{AbstractArray,UniformScaling})
     checkinput(dd.x, V)
-    xx_partial = V isa UniformScaling ? seed(dd.x) : V
+    xx_partial = V isa UniformScaling ? seed(dd.x) : V'
     duals = dualrun() do
         dualarray = DualArray(dd.x, xx_partial)
         dd.f(dualarray)
@@ -97,7 +97,11 @@ function Base.:*(dd::D{<:AbstractArray}, V::Union{AbstractArray,UniformScaling})
         end
     else # gradient
         ps = partials(J_dual)
-        return ps isa Zero ? zero(eltype(V)) : ps'
+        if V isa AbstractVector
+            return ps isa Zero ? zero(J_dual) : first(ps)
+        else
+            return ps isa Zero ? (false * V[1, :])' : ps'
+        end
     end
 end
 

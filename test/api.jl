@@ -15,8 +15,15 @@ using ModelingToolkit: @variables, Variable
     @test DI(DI(sin))(1) === -sin(1)
 
     # Gradient
-    @test D(x->1)([1,2,3]) * I === false # zero
+    @test D(x->1)([1,2,3]) * I == zeros(3)' # zero
+    @test D(x->1)([1,2,3]) * zeros(3, 4) == zeros(4)'
+    @test D(x->1)([1,2,3]) * zeros(3, 2) == zeros(2)'
+    @test D(x->1)([1,2,3]) * ones(3) === 0
     @test D(sum)([1,2,3]) * I == ones(3)'
+    @test D(sum)([1,2,3]) * ones(3) === 3.0
+    @test D(sum)([1,2,3]) * ones(Int, 3) === 3
+    @test D(sum)([1,2,3]) * ones(Int, 3, 2) == fill(3, 2)'
+    @test D(sum)([1,2,3]) * ones(Int, 3, 4) == fill(3, 4)'
 
     # Jacobian
     zero_J = D(x->[1,1,1])([1,2,3]) * I # zero
@@ -35,6 +42,9 @@ using ModelingToolkit: @variables, Variable
     jvp2 = dcumsum([1,2,3]) * @SVector [1, 2, 3]
     @test jvp2 isa MVector{3,Int}
     @test jvp2 == [1, 3, 6]
+    jmp3 = dcumsum([1,2,3]) * @SArray [1 2; 3 4; 5 6]
+    @test jmp3 isa MMatrix{3,2,Int}
+    @test jmp3 == [1 2; 4 6; 9 12]
     @test_throws ArgumentError dcumsum([1,2,3]) * [1, 2]
     @test D(x->@SVector([x[1], x[2]]))(@SVector([1,2,3])) * I === @SMatrix [1 0 0; 0 1 0]
     @test D(x->@SVector([x[1], x[2]]))(@SVector([1,2,3])) * @SVector([1, 2, 3]) === @SVector [1, 2]

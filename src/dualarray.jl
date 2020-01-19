@@ -20,7 +20,7 @@ end
 isjvp(v, p) = ndims(v) === ndims(p)
 isjvp(d::DualArray) = isjvp(data(d), allpartials(d))
 function DualArray{T}(v, p) where {T}
-    N = isjvp(v, p) ? 1 : size(p, ndims(p))
+    N = isjvp(v, p) ? 1 : size(p, 1)
     return DualArray{T,N}(v, p)
 end
 DualArray(a::AbstractArray, b::AbstractArray) = DualArray{typeof(dualtag())}(a, b)
