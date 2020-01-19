@@ -71,7 +71,7 @@ unwrap_adj(x::Union{Transpose,Adjoint}) = unwrap_adj(parent(x))
 unwrap_adj(x) = x
 
 function Base.:*(dd::D{<:AbstractArray}, V::Union{AbstractArray,UniformScaling})
-    # always chunk
+    checkinput(dd.x, V)
     xx_partial = V isa UniformScaling ? seed(dd.x) : V
     duals = dualrun() do
         dualarray = DualArray(dd.x, xx_partial)
@@ -79,11 +79,14 @@ function Base.:*(dd::D{<:AbstractArray}, V::Union{AbstractArray,UniformScaling})
     end
 
     J_dual = unwrap_adj(duals)
-    J_sz = (length(J_dual), length(dd.x))
+    J_sz = xx_partial isa AbstractVector ?
+               (length(J_dual), ) :
+               (length(J_dual), size(xx_partial, 2))
 
     if J_dual isa AbstractArray # Jacobian
         if J_dual isa DualArray
-            return allpartials(J_dual)'
+            ps = allpartials(J_dual)
+            return isjvp(J_dual) ? ps : ps'
         elseif J_dual isa StaticArray
             return extract_diffresult(J_dual, J_sz)
         else
@@ -98,7 +101,13 @@ function Base.:*(dd::D{<:AbstractArray}, V::Union{AbstractArray,UniformScaling})
     end
 end
 
-function extract_diffresult(xs, (m, n))
+@noinline throwinput() = throw(ArgumentError("In `D(f)(x) * v`, `x` and `v` must have the same axes."))
+checkinput(x, v) = (all(i->axes(x, i) == axes(v, i), 1:ndims(x)) || throwinput(); nothing)
+checkinput(_, ::UniformScaling) = nothing
+
+function extract_diffresult(xs, mn::Tuple)
+    isjvp = mn isa Tuple{<:Integer}
+    m, n = isjvp ? (first(mn), 1) : mn
     tup = mapreduce((x,y)->tuple(x..., y...), xs.data) do x
         if x isa Zero
             ntuple(_->false, n)
@@ -106,8 +115,7 @@ function extract_diffresult(xs, (m, n))
             partials(x).data
         end
     end
-
-    return SMatrix{n, m}(tup)'
+    return isjvp ? SVector{m}(tup) : SMatrix{n, m}(tup)'
 end
 
 function extract_diffresult!(J, ds::AbstractArray)

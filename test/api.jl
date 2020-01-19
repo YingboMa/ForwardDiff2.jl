@@ -13,9 +13,11 @@ using ModelingToolkit: @variables, Variable
     @test D(AbstractFloat)(1) * 1 === 1
     @test D(x->[x, x^2])(3) * 1 == [1, 6]
     @test DI(DI(sin))(1) === -sin(1)
+
     # Gradient
     @test D(x->1)([1,2,3]) * I === false # zero
     @test D(sum)([1,2,3]) * I == ones(3)'
+
     # Jacobian
     zero_J = D(x->[1,1,1])([1,2,3]) * I # zero
     @test eltype(zero_J) === Int
@@ -27,11 +29,21 @@ using ModelingToolkit: @variables, Variable
     @test j2 == tj2
     @test typeof(j2) == typeof(tj2)
     @test dcumsum([1,2,3]) * I == [1 0 0; 1 1 0; 1 1 1]
+    jvp1 = dcumsum([1,2,3]) * [1, 2, 3]
+    @test jvp1 isa Vector{Int}
+    @test jvp1 == [1, 3, 6]
+    jvp2 = dcumsum([1,2,3]) * @SVector [1, 2, 3]
+    @test jvp2 isa MVector{3,Int}
+    @test jvp2 == [1, 3, 6]
+    @test_throws ArgumentError dcumsum([1,2,3]) * [1, 2]
     @test D(x->@SVector([x[1], x[2]]))(@SVector([1,2,3])) * I === @SMatrix [1 0 0; 0 1 0]
+    @test D(x->@SVector([x[1], x[2]]))(@SVector([1,2,3])) * @SVector([1, 2, 3]) === @SVector [1, 2]
+
     # Hessian
-    dh = DI(DI(x->x[1]^x[2] + x[3]^3 + x[3]*x[2]*x[1]))
-    @test dh(@SVector[1,2,3]) === @SMatrix [2 4 2; 4 0 1; 2 1 18.]
-    @test dh([1,2,3]) == [2 4 2; 4 0 1; 2 1 18.]
+    dh = D(DI(x->x[1]^x[2] + x[3]^3 + x[3]*x[2]*x[1]))
+    @test dh(@SVector[1,2,3]) * I === @SMatrix [2 4 2; 4 0 1; 2 1 18.0]
+    @test dh([1,2,3]) * I == [2 4 2; 4 0 1; 2 1 18.0]
+    @test dh([1,2,3]) * @SVector([1, 2, 3]) == @SVector [16, 7, 58.0]
 end
 
 @testset "Inference" begin
@@ -62,9 +74,12 @@ end
 
     u0 = [1.0, 0.0, 0.0]
     for tf in [1, 10, 100.0]
-        fd2 = D(x->odesolver(x, ForwardDiff2.value, tf))(u0) * I
+        fd2_D = D(x->odesolver(x, ForwardDiff2.value, tf))(u0)
+        fd2 = fd2_D * I
+        fd2_jvp = fd2_D * [1, 2, 3.0]
         fd = ForwardDiff.jacobian(x->odesolver(x, ForwardDiff.value, tf), u0)
         @test fd2 ≈ fd rtol=1e-12 # Wow, chaos!
+        @test fd2_jvp ≈ fd * [1, 2, 3.0] rtol=1e-12 # Wow, chaos!
     end
 end
 
@@ -77,11 +92,17 @@ end
     p = [0.1, 0.2]
     g(x, p) = [sin(x[1])*p[2], tan(p[1]*x[1])]
 
-    num_fd2 = ForwardDiff2.D(p->(ForwardDiff2.D(x->g(x, p))(x) * I))(p) * I
+    num_fd2_D = ForwardDiff2.D(p->(ForwardDiff2.D(x->g(x, p))(x) * I))(p)
+    num_fd2 = num_fd2_D * I
+    num_fd2_jvp = ForwardDiff2.D(p->(ForwardDiff2.D(x->g(x, p))(x) * I))(p) * [1, 2.0]
     num_fd = ForwardDiff.jacobian(p->ForwardDiff.jacobian(x->g(x, p), x), [0.1, 0.2])
     @test num_fd2 == num_fd
+    @test num_fd2_jvp == num_fd * [1, 2.0]
 
-    @variables x[1:2] p[1:2]
+    @variables x[1:2] p[1:2] v[1:2]
     g(x, p) = [sin(x[1])*p[2], tan(p[1]*x[1])]
     @test_nowarn ForwardDiff2.D(p->(ForwardDiff2.D(x->g(x, p))(x) * I))(p) * I
+    @test_nowarn ForwardDiff2.D(p->(ForwardDiff2.D(x->g(x, p))(x) * I))(p) * v
+    @test_nowarn ForwardDiff2.D(p->(ForwardDiff2.D(x->g(x, p))(x) * I))(p) * [1, 2]
+    @test_nowarn ForwardDiff2.D(p->(ForwardDiff2.D(x->g(x, p))(x) * I))(p) * [1, 2.0]
 end
