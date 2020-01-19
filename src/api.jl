@@ -72,7 +72,9 @@ unwrap_adj(x) = x
 
 function Base.:*(dd::D{<:AbstractArray}, V::Union{AbstractArray,UniformScaling})
     checkinput(dd.x, V)
-    xx_partial = V isa UniformScaling ? seed(dd.x) : V'
+    xx_partial = V isa UniformScaling ? seed(dd.x) :
+                    V isa AbstractVector ? V :
+                    V'
     duals = dualrun() do
         dualarray = DualArray(dd.x, xx_partial)
         dd.f(dualarray)
@@ -100,7 +102,8 @@ function Base.:*(dd::D{<:AbstractArray}, V::Union{AbstractArray,UniformScaling})
         if V isa AbstractVector
             return ps isa Zero ? zero(J_dual) : first(ps)
         else
-            return ps isa Zero ? (false * V[1, :])' : ps'
+            rhs = V isa UniformScaling ? dd.x : @view(V[1, :])
+            return ps isa Zero ? (false * rhs)' : ps'
         end
     end
 end
