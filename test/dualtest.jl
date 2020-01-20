@@ -317,6 +317,37 @@ for N in (3), M in (4), V in (Int, Float32, Float64)
     @test isodd(dual2(dual1(1, 1), 1))
     @test !(isodd(dual2(dual1(2, 1), 1)))
 
+    ########################
+    # Promotion/Conversion #
+    ########################
+
+    WIDE_T = widen(V)
+
+    @test @drun1 promote_type(Dual{Tag1,V,N}, V) == Dual{Tag1,V,N}
+    @test @drun1 promote_type(Dual{Tag1,V,N}, WIDE_T) == Dual{Tag1,WIDE_T,N}
+    @test @drun1 promote_type(Dual{Tag1,WIDE_T,N}, V) == Dual{Tag1,WIDE_T,N}
+    @test @drun1 promote_type(Dual{Tag1,V,N}, Dual{Tag1,V,N}) == Dual{Tag1,V,N}
+    @test @drun1 promote_type(Dual{Tag1,V,N}, Dual{Tag1,WIDE_T,N}) == Dual{Tag1,WIDE_T,N}
+    @test @drun2 promote_type(Dual{Tag1,WIDE_T,N}, Dual{Tag2,Dual{Tag1,V,M},N}) == Dual{Tag2,Dual{Tag1,WIDE_T,M},N}
+
+    # WIDE_FDNUM = convert(Dual{Tag1,WIDE_T}, FDNUM)
+    # WIDE_NESTED_FDNUM = convert(Dual{Tag2,Dual{Tag1,WIDE_T,M}}, NESTED_FDNUM)
+
+    # @test typeof(WIDE_FDNUM) === Dual{Tag1,WIDE_T,N}
+    # @test typeof(WIDE_NESTED_FDNUM) === Dual{Tag2,Dual{Tag1,WIDE_T,M},N}
+
+    # @test value(WIDE_FDNUM) == PRIMAL
+    # @test value(WIDE_NESTED_FDNUM) == PRIMAL
+
+    # @test convert(Dual, FDNUM) === FDNUM
+    # @test convert(Dual, NESTED_FDNUM) === NESTED_FDNUM
+    # @test convert(Dual{Tag1,V,N}, FDNUM) === FDNUM
+    # @test convert(Dual{Tag2,Dual{Tag1,V,M},N}, NESTED_FDNUM) === NESTED_FDNUM
+    # @test convert(Dual{Tag1,WIDE_T,N}, PRIMAL) === Dual{Tag1}(WIDE_T(PRIMAL), zero(Partials{N,WIDE_T}))
+    # @test convert(Dual{Tag2,Dual{Tag2,WIDE_T,M},N}, PRIMAL) === Dual{Tag2}(Dual{Tag1}(WIDE_T(PRIMAL), zero(Partials{M,WIDE_T})), zero(Partials{N,Dual{Tag1,V,M}}))
+    # @test convert(Dual{Tag2,Dual{Tag2,V,M},N}, FDNUM) === Dual{Tag2}(convert(Dual{Tag1,V,M}, PRIMAL), convert(Partials{N,Dual{Tag1,V,M}}, PARTIALS))
+    # @test convert(Dual{Tag2,Dual{Tag2,WIDE_T,M},N}, FDNUM) === Dual{Tag2}(convert(Dual{Tag1,WIDE_T,M}, PRIMAL), convert(Partials{N,Dual{Tag1,WIDE_T,M}}, PARTIALS))
+
     ##############
     # Arithmetic #
     ##############

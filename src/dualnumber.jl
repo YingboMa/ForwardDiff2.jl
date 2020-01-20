@@ -151,9 +151,9 @@ for pred in UNARY_PREDICATES
     @eval Base.$(pred)(d::Dual) = $(pred)(value(d))
 end
 
-########################
-# Promotion/Conversion #
-########################
+##############
+# Conversion #
+##############
 
 Base.convert(::Type{Dual{T,V,P}}, d::Dual{T}) where {T,V,P} = Dual{T}(convert(V, value(d)), convert(P, partials(d)))
 Base.convert(::Type{Dual{T,V,P}}, x) where {T,V,P} = Dual{T}(convert(V, x), zero(P))
