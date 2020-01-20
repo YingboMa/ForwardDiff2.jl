@@ -32,21 +32,14 @@ struct D{T,F}
 
     D(f) = new{Nothing,typeof(f)}(f, nothing)
     (dd::D{<:Nothing,F})(x::T) where {T,F} = new{T,F}(dd.f, x)
+    D(dd::D) = D(DI(dd.f))
 end
 
 """
     DI(f)
 
-`DI(f)(x)` is a convenient function to compute the derivative, gradient or
+`DI(f)(x)` is a convenience function to materialize the derivative, gradient or
 Jacobian of `f` at `x`.
-
-It is equivalent to
-
-```julia
-D(f)(x) * I
-```
-
-where `I` is the multiplicative identity of ``\\frac{df}{dx}(x)``.
 """
 DI(f) = x->D(f)(x) * mul_identity(x)
 

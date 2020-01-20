@@ -13,6 +13,7 @@ using ModelingToolkit: @variables, Variable
     @test D(AbstractFloat)(1) * 1 === 1
     @test D(x->[x, x^2])(3) * 1 == [1, 6]
     @test DI(DI(sin))(1) === -sin(1)
+    @test D(D(sin))(1) * 1 === -sin(1)
 
     # Gradient
     @test D(x->1)([1,2,3]) * I == zeros(3)' # zero
@@ -50,10 +51,13 @@ using ModelingToolkit: @variables, Variable
     @test D(x->@SVector([x[1], x[2]]))(@SVector([1,2,3])) * @SVector([1, 2, 3]) === @SVector [1, 2]
 
     # Hessian
-    dh = D(DI(x->x[1]^x[2] + x[3]^3 + x[3]*x[2]*x[1]))
-    @test dh(@SVector[1,2,3]) * I === @SMatrix [2 4 2; 4 0 1; 2 1 18.0]
-    @test dh([1,2,3]) * I == [2 4 2; 4 0 1; 2 1 18.0]
-    @test dh([1,2,3]) * @SVector([1, 2, 3]) == @SVector [16, 7, 58.0]
+    dh1 = D(DI(x->x[1]^x[2] + x[3]^3 + x[3]*x[2]*x[1]))
+    dh2 = D(D(x->x[1]^x[2] + x[3]^3 + x[3]*x[2]*x[1]))
+    for dh in (dh1, dh2)
+        @test dh(@SVector[1,2,3]) * I === @SMatrix [2 4 2; 4 0 1; 2 1 18.0]
+        @test dh([1,2,3]) * I == [2 4 2; 4 0 1; 2 1 18.0]
+        @test dh([1,2,3]) * @SVector([1, 2, 3]) == @SVector [16, 7, 58.0]
+    end
 end
 
 @testset "Inference" begin
