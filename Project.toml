@@ -1,7 +1,7 @@
 name = "ForwardDiff2"
 uuid = "994df76e-a4c1-5e1f-bd5c-23b9b5303d4f"
 authors = ["Yingbo Ma <mayingbo5@gmail.com>", "Shashi Gowda <gowda@mit.edu>"]
-version = "0.2.0"
+version = "0.2.1"
 
 [deps]
 Cassette = "7057c7e9-c182-5462-911a-8362d720325c"
