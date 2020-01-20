@@ -13,10 +13,18 @@ using ModelingToolkit: @variables, Variable
     @test D(AbstractFloat)(1) * 1 === 1
     @test D(x->[x, x^2])(3) * 1 == [1, 6]
     @test DI(DI(sin))(1) === -sin(1)
+    @test D(D(sin))(1) * 1 === -sin(1)
 
     # Gradient
-    @test D(x->1)([1,2,3]) * I === false # zero
+    @test D(x->1)([1,2,3]) * I == zeros(3)' # zero
+    @test D(x->1)([1,2,3]) * zeros(3, 4) == zeros(4)'
+    @test D(x->1)([1,2,3]) * zeros(3, 2) == zeros(2)'
+    @test D(x->1)([1,2,3]) * ones(3) === 0
     @test D(sum)([1,2,3]) * I == ones(3)'
+    @test D(sum)([1,2,3]) * ones(3) === 3.0
+    @test D(sum)([1,2,3]) * ones(Int, 3) === 3
+    @test D(sum)([1,2,3]) * ones(Int, 3, 2) == fill(3, 2)'
+    @test D(sum)([1,2,3]) * ones(Int, 3, 4) == fill(3, 4)'
 
     # Jacobian
     zero_J = D(x->[1,1,1])([1,2,3]) * I # zero
@@ -35,15 +43,21 @@ using ModelingToolkit: @variables, Variable
     jvp2 = dcumsum([1,2,3]) * @SVector [1, 2, 3]
     @test jvp2 isa MVector{3,Int}
     @test jvp2 == [1, 3, 6]
+    jmp3 = dcumsum([1,2,3]) * @SArray [1 2; 3 4; 5 6]
+    @test jmp3 isa MMatrix{3,2,Int}
+    @test jmp3 == [1 2; 4 6; 9 12]
     @test_throws ArgumentError dcumsum([1,2,3]) * [1, 2]
     @test D(x->@SVector([x[1], x[2]]))(@SVector([1,2,3])) * I === @SMatrix [1 0 0; 0 1 0]
     @test D(x->@SVector([x[1], x[2]]))(@SVector([1,2,3])) * @SVector([1, 2, 3]) === @SVector [1, 2]
 
     # Hessian
-    dh = D(DI(x->x[1]^x[2] + x[3]^3 + x[3]*x[2]*x[1]))
-    @test dh(@SVector[1,2,3]) * I === @SMatrix [2 4 2; 4 0 1; 2 1 18.0]
-    @test dh([1,2,3]) * I == [2 4 2; 4 0 1; 2 1 18.0]
-    @test dh([1,2,3]) * @SVector([1, 2, 3]) == @SVector [16, 7, 58.0]
+    dh1 = D(DI(x->x[1]^x[2] + x[3]^3 + x[3]*x[2]*x[1]))
+    dh2 = D(D(x->x[1]^x[2] + x[3]^3 + x[3]*x[2]*x[1]))
+    for dh in (dh1, dh2)
+        @test dh(@SVector[1,2,3]) * I === @SMatrix [2 4 2; 4 0 1; 2 1 18.0]
+        @test dh([1,2,3]) * I == [2 4 2; 4 0 1; 2 1 18.0]
+        @test dh([1,2,3]) * @SVector([1, 2, 3]) == @SVector [16, 7, 58.0]
+    end
 end
 
 @testset "Inference" begin

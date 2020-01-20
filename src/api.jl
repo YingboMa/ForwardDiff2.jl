@@ -32,21 +32,14 @@ struct D{T,F}
 
     D(f) = new{Nothing,typeof(f)}(f, nothing)
     (dd::D{<:Nothing,F})(x::T) where {T,F} = new{T,F}(dd.f, x)
+    D(dd::D) = D(DI(dd.f))
 end
 
 """
     DI(f)
 
-`DI(f)(x)` is a convenient function to compute the derivative, gradient or
+`DI(f)(x)` is a convenience function to materialize the derivative, gradient or
 Jacobian of `f` at `x`.
-
-It is equivalent to
-
-```julia
-D(f)(x) * I
-```
-
-where `I` is the multiplicative identity of ``\\frac{df}{dx}(x)``.
 """
 DI(f) = x->D(f)(x) * mul_identity(x)
 
@@ -72,7 +65,9 @@ unwrap_adj(x) = x
 
 function Base.:*(dd::D{<:AbstractArray}, V::Union{AbstractArray,UniformScaling})
     checkinput(dd.x, V)
-    xx_partial = V isa UniformScaling ? seed(dd.x) : V
+    xx_partial = V isa UniformScaling ? seed(dd.x) :
+                    V isa AbstractVector ? V :
+                    V'
     duals = dualrun() do
         dualarray = DualArray(dd.x, xx_partial)
         dd.f(dualarray)
@@ -97,7 +92,12 @@ function Base.:*(dd::D{<:AbstractArray}, V::Union{AbstractArray,UniformScaling})
         end
     else # gradient
         ps = partials(J_dual)
-        return ps isa Zero ? zero(eltype(V)) : ps'
+        if V isa AbstractVector
+            return ps isa Zero ? zero(J_dual) : first(ps)
+        else
+            rhs = V isa UniformScaling ? dd.x : @view(V[1, :])
+            return ps isa Zero ? (false * rhs)' : ps'
+        end
     end
 end
 
