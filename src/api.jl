@@ -109,10 +109,11 @@ function extract_diffresult(xs, mn::Tuple)
     isjvp = mn isa Tuple{<:Integer}
     m, n = isjvp ? (first(mn), 1) : mn
     tup = mapreduce((x,y)->tuple(x..., y...), xs.data) do x
-        if x isa Zero
+        ps = partials(x)
+        if ps isa Zero
             ntuple(_->false, n)
         else
-            partials(x).data
+            ps.data
         end
     end
     return isjvp ? SVector{m}(tup) : SMatrix{n, m}(tup)'

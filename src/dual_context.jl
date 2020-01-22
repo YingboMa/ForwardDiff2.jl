@@ -124,7 +124,7 @@ end
         # none of the arguments have the same tag as the context
         # try with the parent context
         ctx1 = similarcontext(ctx, metadata=oldertag(ctx.metadata))
-        return overdub(ctx1, f, args...)
+        return overdub(ctx1, ()->f(args...)) # This will wrap it in isinteresting; alternative
     else
         # call ChainRules.frule to execute `f` and
         # get a function that computes the partials
@@ -147,28 +147,6 @@ for pred in BINARY_PREDICATES
         $pred(vx, vy)
     end
 end
-
-###
-### Promotion
-###
-Cassette.overdub(::TaggedCtx, ::typeof(Base.promote_rule), ::Type{R}, ::Type{Dual{T,V,P}}) where {R,T,V,P} = Dual{T,promote_type(R, V),P}
-Cassette.overdub(ctx::TaggedCtx, f::typeof(Base.promote_rule), a::Type{Dual{T,V,P}}, b::Type{R}) where {R,T,V,P} = overdub(ctx, f, b, a)
-function Cassette.overdub(ctx::TaggedCtx, ::typeof(Base.promote_rule), ::Type{Dual{T,V1,P}}, ::Type{Dual{T,V2,P}}) where {T,V1,V2,P}
-    V3 = overdub(ctx, promote_type, V1, V2)
-    return Dual{T,V3,P}
-end
-# TODO: use multiple dispatch
-function Cassette.overdub(ctx::TaggedCtx{S}, ::typeof(Base.promote_rule), ::Type{Dual{T1,V1,P1}}, ::Type{Dual{T2,V2,P2}}) where {T1,T2,V1,V2,P1,P2,S}
-    ctx1 = S === Nothing ? ctx : similarcontext(ctx, metadata=oldertag(ctx.metadata))
-    V3 = overdub(ctx1, promote_type, V1, V2)
-    if Tag{S} === T1
-        return Dual{T1,V3,P1}
-    elseif Tag{S} === T2
-        return Dual{T2,V3,P2}
-    end
-    promote_error()
-end
-@noinline promote_error() = error("this cannot happen")
 
 #### recursion early termination condition
 @inline Cassette.overdub(ctx::TaggedCtx, f::Core.Builtin, args...) = f(args...)

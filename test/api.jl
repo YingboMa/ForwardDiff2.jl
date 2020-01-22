@@ -119,4 +119,9 @@ end
     @test_nowarn ForwardDiff2.D(p->(ForwardDiff2.D(x->g(x, p))(x) * I))(p) * v
     @test_nowarn ForwardDiff2.D(p->(ForwardDiff2.D(x->g(x, p))(x) * I))(p) * [1, 2]
     @test_nowarn ForwardDiff2.D(p->(ForwardDiff2.D(x->g(x, p))(x) * I))(p) * [1, 2.0]
+
+    function fun(vars, theta)
+        vars[1] + exp(vars[2])
+    end
+    @test all(iszero, DI(vars_arg -> DI(theta_arg -> fun(vars_arg, theta_arg))(ones(5)))(ones(6)))
 end
