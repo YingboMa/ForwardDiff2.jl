@@ -126,9 +126,29 @@ end
     @test all(iszero, DI(vars_arg -> DI(theta_arg -> fun(vars_arg, theta_arg))(ones(5)))(ones(6)))
 end
 
-@testset "Differentiation Failure" begin
+@testset "Dual leakage fixes" begin
     # issue #31
     y = 1
     _global_access(x) = global y = x
     @test_throws ForwardDiff2.DifferentiationFailure D(_global_access)(1) * 1
+
+    # issue #30 (part 2)
+    @test_throws ForwardDiff2.DifferentiationFailure D(x -> D(y -> x = y, x)*x, 1)
+
+    mutable struct MyStruct{T}
+        x::T
+    end
+
+    @test D() do x
+        s = MyStruct(x)
+        s.x +=1
+        s.x *= 2x
+    end(1) * 1 === 6
+
+    # wut
+    #@test D(y -> (D() do x
+    #    s = MyStruct(x)
+    #    s.x += 1
+    #    s.x *= 2x
+    #end)(y) * 10)(1) * 1 === N
 end
