@@ -71,6 +71,20 @@ function newslot!(ir)
     Core.SlotNumber(length(ir.slotnames))
 end
 
+struct DifferentiationFailure <: Exception
+    msg::String
+end
+
+Base.showerror(io::IO, d::DifferentiationFailure) = print(io, "Differentiation failure: ", d.msg)
+
+_fail_if_dual(::Dual) = throw(DifferentiationFailure("Differentiated variable being set to a global variable"))
+_fail_if_dual(x) = x
+
+function checked_global_set(stmt)
+    stmt.args[2] = Expr(:call, _fail_if_dual, stmt.args[2])
+    [stmt]
+end
+
 function rewrite_ir(ctx, ref)
     # turn
     #   f(x...)
@@ -88,9 +102,19 @@ function rewrite_ir(ctx, ref)
         (stmt, i) -> Base.Meta.isexpr(stmt, :call) ? 8 : nothing,
         (stmt, i) -> (s = newslot!(ir); rewrite_call(ctx, stmt, s, i)))
 
+    # Sometimes IR has y = f(x) as one statement, handle that case:
     Cassette.insert_statements!(ir.code, ir.codelocs,
-                                (stmt, i) -> Base.Meta.isexpr(stmt, :(=)) && stmt.args[1] isa Core.SlotNumber && stmt.args[2] isa Expr && stmt.args[2].head == :call ? 8 : nothing,
+                                (stmt, i) -> Base.Meta.isexpr(stmt, :(=)) &&
+                                             stmt.args[1] isa Core.SlotNumber &&
+                                             stmt.args[2] isa Expr &&
+                                             stmt.args[2].head == :call ? 8 : nothing,
                                 (stmt, i) -> rewrite_call(ctx, stmt.args[2], stmt.args[1], i))
+
+    # Error if a global variable is set to a Dual number
+    Cassette.insert_statements!(ir.code, ir.codelocs,
+                                (stmt, i) -> Base.Meta.isexpr(stmt, :(=)) &&
+                                             stmt.args[1] isa GlobalRef ? 1 : nothing,
+                                (stmt, i) -> checked_global_set(stmt))
 
     ir.ssavaluetypes = length(ir.code)
 

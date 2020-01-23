@@ -125,3 +125,10 @@ end
     end
     @test all(iszero, DI(vars_arg -> DI(theta_arg -> fun(vars_arg, theta_arg))(ones(5)))(ones(6)))
 end
+
+@testset "Differentiation Failure" begin
+    # issue #31
+    y = 1
+    _global_access(x) = global y = x
+    @test_throws ForwardDiff2.DifferentiationFailure D(_global_access)(1) * 1
+end
