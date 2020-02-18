@@ -148,7 +148,7 @@ for pred in BINARY_PREDICATES
     end
 end
 
-#### recursion early termination condition
+#### recursion early termination conditions
 @inline Cassette.overdub(ctx::TaggedCtx, f::Core.Builtin, args...) = f(args...)
 @inline Cassette.overdub(ctx::TaggedCtx{T}, f::Union{typeof(value),typeof(partials)}, d::Dual{T}) where {T<:Tag{Nothing}} = f(d)
 @inline Cassette.overdub(ctx::TaggedCtx{T}, f::typeof(allpartials), d::AbstractArray{<:Dual{T}})  where {T<:Tag{Nothing}} = f(d)
@@ -158,3 +158,14 @@ end
 ##### Inference Hacks
 @inline isinteresting(ctx::TaggedCtx, f::Union{typeof(Base.print_to_string),typeof(hash)}, args...) = false
 @noinline Cassette.overdub(ctx::TaggedCtx, f::Union{typeof(Base.print_to_string),typeof(hash),typeof(Core.throw)}, args...) = f(args...)
+
+##### Errors instead of silent incorrectness
+
+@inline function Cassette.overdub(ctx::TaggedCtx{T}, f::typeof(Core.setfield!),
+                                  thing::S, field, d::Dual) where {T,S}
+    DT = Dual{Tag{T}}
+    if isdefined(thing, field) && getfield(thing, field) isa DT && d isa DT
+        return f(thing, field, d)
+    end
+    throw(DifferentiationFailure("Setting a closed variable to a differentiated value is not allowed"))
+end
